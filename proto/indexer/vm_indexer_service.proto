@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package code.vm.v1;
+
+option go_package = "github.com/code-payments/code-vm-indexer/generated/go/indexer/v1;indexer";
+
+import "validate/validate.proto";
+import "indexer/model.proto";
+
+service Indexer {
+    // GetVirtualTimelockAccounts gets all virtual Timelock accounts for a given owner address
+    rpc GetVirtualTimelockAccounts(GetVirtualTimelockAccountsRequest) returns (GetVirtualTimelockAccountsResponse);
+
+    // GetVirtualDurableNonce gets a virtual durable nonce for a given address
+    rpc GetVirtualDurableNonce(GetVirtualDurableNonceRequest) returns (GetVirtualDurableNonceResponse);
+
+    // GetVirtualRelayAccount gets a virtual relay account for a given address
+    rpc GetVirtualRelayAccount(GetVirtualRelayAccountRequest) returns (GetVirtualRelayAccountResponse);
+}
+
+message GetVirtualTimelockAccountsRequest {
+    Address vm_account = 1 [(validate.rules).message.required = true];
+
+    Address owner = 2 [(validate.rules).message.required = true];
+}
+
+message GetVirtualTimelockAccountsResponse {
+    Result result = 1;
+    enum Result {
+        OK = 0;
+        NOT_FOUND = 1;
+    }
+
+    repeated VirtualTimelockAccountWithStorageMetadata items = 2;
+}
+
+message GetVirtualDurableNonceRequest {
+    Address vm_account = 1 [(validate.rules).message.required = true];
+
+    Address address = 2 [(validate.rules).message.required = true];
+}
+
+message GetVirtualDurableNonceResponse {
+    Result result = 1;
+    enum Result {
+        OK = 0;
+        NOT_FOUND = 1;
+    }
+
+    VirtualDurableNonceWithStorageMetadata item = 2;
+}
+
+message GetVirtualRelayAccountRequest {
+    Address vm_account = 1 [(validate.rules).message.required = true];
+
+    Address address = 2 [(validate.rules).message.required = true];
+}
+
+message GetVirtualRelayAccountResponse {
+    Result result = 1;
+    enum Result {
+        OK = 0;
+        NOT_FOUND = 1;
+    }
+
+    VirtualRelayAccountWithStorageMetadata item = 2;
+}

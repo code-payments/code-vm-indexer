@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package code.vm.v1;
+
+option go_package = "github.com/code-payments/code-vm-indexer/generated/go/indexer/v1;indexer";
+
+import "validate/validate.proto";
+
+message Address {
+    bytes value = 1 [(validate.rules).bytes = {
+        min_len: 32
+        max_len: 32
+    }];
+}
+
+message Hash {
+    bytes value = 1 [(validate.rules).bytes = {
+        min_len: 32
+        max_len: 32
+    }];
+}
+
+message Proof {
+    Hash root = 1 [(validate.rules).message.required = true];
+
+    repeated Hash proof = 2 [(validate.rules).repeated = {
+        min_items: 1
+        max_items: 63
+    }];
+
+    Hash leaf = 3 [(validate.rules).message.required = true];
+
+    uint64 for_leaf_index = 4;
+
+    uint64 until_leaf_index = 5;
+}
+
+message VirtualTimelockAccount {
+    Address owner = 1 [(validate.rules).message.required = true];
+
+    Hash nonce = 2 [(validate.rules).message.required = true];
+
+    uint32 token_bump = 3 [(validate.rules).uint32.lte = 255];
+
+    uint32 unlock_bump = 4 [(validate.rules).uint32.lte = 255];
+
+    uint32 withdraw_bump = 5 [(validate.rules).uint32.lte = 255];
+
+    uint64 balance = 6;
+
+    uint32 bump = 7 [(validate.rules).uint32.lte = 255];
+}
+
+message VirtualDurableNonce {
+    Address address = 1 [(validate.rules).message.required = true];
+
+    Hash nonce = 2 [(validate.rules).message.required = true];
+}
+
+message VirtualRelayAccount {
+    Address address = 1 [(validate.rules).message.required = true];
+
+    Hash commitment = 2 [(validate.rules).message.required = true];
+
+    Hash recent_root = 3 [(validate.rules).message.required = true];
+
+    Address destination = 4 [(validate.rules).message.required = true];
+}
+
+message VirtualAccountStorage {
+    oneof storage {
+        option (validate.required) = true;
+
+        MemoryVirtualAccountStorage     memory     = 1;
+        CompressedVirtualAccountStorage compressed = 2;
+    }
+}
+
+message MemoryVirtualAccountStorage {
+    Address account = 1 [(validate.rules).message.required = true];
+
+    uint32 index = 2 [(validate.rules).uint32.lte = 65535];
+}
+
+message CompressedVirtualAccountStorage {
+    Address account = 1 [(validate.rules).message.required = true];
+
+    Proof proof = 2 [(validate.rules).message.required = true];
+}
+
+message VirtualTimelockAccountWithStorageMetadata {
+    VirtualTimelockAccount account = 1 [(validate.rules).message.required = true];
+
+    VirtualAccountStorage storage = 2 [(validate.rules).message.required = true];
+
+    uint64 slot = 3;
+}
+
+message VirtualDurableNonceWithStorageMetadata {
+    VirtualDurableNonce account = 1 [(validate.rules).message.required = true];
+
+    VirtualAccountStorage storage = 2 [(validate.rules).message.required = true];
+
+    uint64 slot = 3;
+}
+
+message VirtualRelayAccountWithStorageMetadata {
+    VirtualRelayAccount account = 1 [(validate.rules).message.required = true];
+
+    VirtualAccountStorage storage = 2 [(validate.rules).message.required = true];
+
+    uint64 slot = 3;
+}
