@@ -78,10 +78,10 @@ github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354/go.mod h1:WmhPx2Nbnht
 github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
 github.com/cockroachdb/apd v1.1.0 h1:3LFP3629v+1aKXU5Q37mxmRxX/pIu1nijXydLShEq5I=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
-github.com/code-payments/code-protobuf-api v1.16.6 h1:QCot0U+4Ar5SdSX4v955FORMsd3Qcf0ZgkoqlGJZzu0=
-github.com/code-payments/code-protobuf-api v1.16.6/go.mod h1:pHQm75vydD6Cm2qHAzlimW6drysm489Z4tVxC2zHSsU=
-github.com/code-payments/code-server v1.10.14-0.20240813171531-0193a1504439 h1:ttLK7mxDvz2qyXrSu3XKkwcJc4SdUARgDj7F9qtjy/0=
-github.com/code-payments/code-server v1.10.14-0.20240813171531-0193a1504439/go.mod h1:08lOOOHNkZMLT+7mWjmKnunOgUpUg+C4HaJvvx+Xl0w=
+github.com/code-payments/code-protobuf-api v1.18.1-0.20240912180853-8e16dd113886 h1:PLbMVgpFwwhI6Ji+izq/NnJQGq41OKQ2dP3oPpUEcCA=
+github.com/code-payments/code-protobuf-api v1.18.1-0.20240912180853-8e16dd113886/go.mod h1:pHQm75vydD6Cm2qHAzlimW6drysm489Z4tVxC2zHSsU=
+github.com/code-payments/code-server v1.10.19-0.20240916204835-e2b373837f31 h1:3qFgmNr9tQTsLCNQ6ouGP9/j71HTwMNGYOkMYUrSgxA=
+github.com/code-payments/code-server v1.10.19-0.20240916204835-e2b373837f31/go.mod h1:yxU6DeVToqlBm1VQabtnC3pBb92uvZMPwCd4emZB+ZI=
 github.com/containerd/continuity v0.0.0-20190827140505-75bee3e2ccb6 h1:NmTXa/uVnDyp0TY5MKi197+3HWcnYWfnHGyaFthlnGw=
 github.com/containerd/continuity v0.0.0-20190827140505-75bee3e2ccb6/go.mod h1:GL3xCUCBDV3CZiTSEKksMWbLE66hEyuu9qyDOOqM47Y=
 github.com/coreos/bbolt v1.3.2/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=
