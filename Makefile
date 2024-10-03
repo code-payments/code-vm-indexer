@@ -1,7 +1,7 @@
 GO_OS := $(shell go env GOOS)
 GO_ARCH := $(shell go env GOARCH)
 
-GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+GIT_BRANCH := $(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)
 
 .PHONY: all
 all: generate test
