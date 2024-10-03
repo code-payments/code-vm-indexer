@@ -30,13 +30,13 @@ build-geyser:
 build-rpc-image: GO_OS := linux
 build-rpc-image: GO_ARCH := amd64
 build-rpc-image: build-rpc
-	@docker build -f Dockerfile.rpc --platform linux/amd64 -t code-vm-indexer-rpc:$(GIT_BRANCH) .
+	@docker build -f Dockerfile.rpc --platform linux/amd64 -t code-vm-indexer-rpc-service:$(GIT_BRANCH) .
 
 .PHONY: build-geyser-image
 build-geyser-image: GO_OS := linux
 build-geyser-image: GO_ARCH := amd64
 build-geyser-image: build-geyser
-	@docker build -f Dockerfile.geyser --platform linux/amd64 -t code-vm-indexer-geyser:$(GIT_BRANCH) .
+	@docker build -f Dockerfile.geyser --platform linux/amd64 -t code-vm-indexer-geyser-service:$(GIT_BRANCH) .
 
 .PHONY: run-rpc
 run-rpc: GO_OS := linux
@@ -44,7 +44,7 @@ run-rpc: GO_ARCH := amd64
 run-rpc: build-rpc build-rpc-image
 	@docker run \
 		--rm \
-		-e APP_NAME=code-vm-indexer-rpc \
+		-e APP_NAME=code-vm-indexer-rpc-service \
 		-e DATA_STORAGE_TYPE=$(DATA_STORAGE_TYPE) \
 		-e INSECURE_LISTEN_ADDRESS=:8086 \
 		-e LOG_LEVEL=trace \
@@ -55,7 +55,7 @@ run-rpc: build-rpc build-rpc-image
 		-e POSTGRES_DB_NAME=$(POSTGRES_DB_NAME) \
 		-e RAM_TABLE_NAME=$(RAM_TABLE_NAME) \
 		-p 8086:8086 \
-		code-vm-indexer-rpc:$(GIT_BRANCH)
+		code-vm-indexer-rpc-service:$(GIT_BRANCH)
 
 .PHONY: run-geyser
 run-geyser: GO_OS := linux
@@ -63,7 +63,7 @@ run-geyser: GO_ARCH := amd64
 run-geyser: build-geyser build-geyser-image
 	@docker run \
 		--rm \
-		-e APP_NAME=code-vm-indexer-geyser \
+		-e APP_NAME=code-vm-indexer-geyser-service \
 		-e DATA_STORAGE_TYPE=$(DATA_STORAGE_TYPE) \
 		-e GEYSER_WORKER_GRPC_PLUGIN_ENDPOINT=$(GEYSER_WORKER_GRPC_PLUGIN_ENDPOINT) \
 		-e GEYSER_WORKER_PROGRAM_UPDATE_WORKER_COUNT=4 \
@@ -76,4 +76,4 @@ run-geyser: build-geyser build-geyser-image
 		-e RAM_TABLE_NAME=$(RAM_TABLE_NAME) \
 		-e SOLANA_RPC_ENDPOINT=$(SOLANA_RPC_ENDPOINT) \
 		-e LOG_LEVEL=trace \
-		code-vm-indexer-geyser:$(GIT_BRANCH)
+		code-vm-indexer-geyser-service:$(GIT_BRANCH)
