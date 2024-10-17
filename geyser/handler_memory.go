@@ -263,7 +263,8 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 		if isInitialized {
 			if cachedVirtualAccountState.IsInitialized &&
 				cachedVirtualAccountState.Address == base58VirtualAccountAddress &&
-				bytes.Equal(cachedVirtualAccountState.State, newVirtualAccountState) {
+				bytes.Equal(cachedVirtualAccountState.State, newVirtualAccountState) &&
+				observedAtSlot-cachedVirtualAccountState.Slot < 100 { // todo: configurable?
 				continue
 			}
 
