@@ -292,35 +292,43 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 	}
 
 	// Update the DB with the delta changes to the memory account state
+	var wg sync.WaitGroup
 	for _, dbUpdate := range dbUpdates {
-		record := &ram.Record{
-			Vm: base58VmAddress,
+		wg.Add(1)
 
-			MemoryAccount: base58MemoryAccountAddress,
-			Index:         uint16(dbUpdate.Index),
-			IsAllocated:   dbUpdate.IsInitialized,
+		go func(dbUpdate *cachedVirtualAccount) {
+			defer wg.Done()
 
-			Slot: dbUpdate.Slot,
+			record := &ram.Record{
+				Vm: base58VmAddress,
 
-			LastUpdatedAt: time.Now(),
-		}
+				MemoryAccount: base58MemoryAccountAddress,
+				Index:         uint16(dbUpdate.Index),
+				IsAllocated:   dbUpdate.IsInitialized,
 
-		if dbUpdate.IsInitialized {
-			record.Address = &dbUpdate.Address
-			record.Type = &dbUpdate.Type
-			record.Data = dbUpdate.State
-		}
+				Slot: dbUpdate.Slot,
 
-		err := h.ramStore.Save(ctx, record)
-		switch err {
-		case nil:
-			h.cachedMemoryAccountState[base58MemoryAccountAddress][dbUpdate.Index] = dbUpdate
-		case ram.ErrStaleState:
-			// Should never happen given current locking structure
-		default:
-			log.WithError(err).Warn("failure updating db record")
-		}
+				LastUpdatedAt: time.Now(),
+			}
+
+			if dbUpdate.IsInitialized {
+				record.Address = &dbUpdate.Address
+				record.Type = &dbUpdate.Type
+				record.Data = dbUpdate.State
+			}
+
+			err := h.ramStore.Save(ctx, record)
+			switch err {
+			case nil:
+				h.cachedMemoryAccountState[base58MemoryAccountAddress][dbUpdate.Index] = dbUpdate
+			case ram.ErrStaleState:
+				// Should never happen given current locking structure
+			default:
+				log.WithError(err).Warn("failure updating db record")
+			}
+		}(dbUpdate)
 	}
+	wg.Wait()
 
 	h.lastSuccessfulSlotUpdateMu.Lock()
 	lastSuccessfulSlotUpdate = h.lastSuccessfulSlotUpdate[base58MemoryAccountAddress]
