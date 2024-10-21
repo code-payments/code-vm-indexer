@@ -42,6 +42,9 @@ type MemoryAccountWithDataUpdateHandler struct {
 	lastSuccessfulSlotUpdateMu sync.RWMutex
 	lastSuccessfulSlotUpdate   map[string]uint64
 
+	highestQueuedSlotUpdateMu sync.RWMutex
+	highestQueuedSlotUpdate   map[string]uint64
+
 	backupWorkerInterval time.Duration
 }
 
@@ -60,6 +63,7 @@ func NewMemoryAccountWithDataUpdateHandler(solanaClient solana.Client, ramStore 
 		observableVmAccounts:     observableVmAccounts,
 		cachedMemoryAccountState: make(map[string]map[int]*cachedVirtualAccount),
 		lastSuccessfulSlotUpdate: make(map[string]uint64),
+		highestQueuedSlotUpdate:  make(map[string]uint64),
 		backupWorkerInterval:     backupWorkerInterval,
 	}
 }
@@ -168,8 +172,37 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 	}
 	h.lastSuccessfulSlotUpdateMu.RUnlock()
 
+	// Check if there's an update for a higher slot
+	h.highestQueuedSlotUpdateMu.Lock()
+	highestQueuedSlotUpdate := h.highestQueuedSlotUpdate[base58MemoryAccountAddress]
+	if observedAtSlot <= highestQueuedSlotUpdate {
+		h.highestQueuedSlotUpdateMu.Unlock()
+		return nil
+	}
+	h.highestQueuedSlotUpdate[base58MemoryAccountAddress] = observedAtSlot
+	h.highestQueuedSlotUpdateMu.Unlock()
+
 	h.cachedMemoryAccountStateMu.Lock()
 	defer h.cachedMemoryAccountStateMu.Unlock()
+
+	// Check (again after acquiring cached memory state mutex) if the state
+	// is stale relative to the last successful update
+	h.lastSuccessfulSlotUpdateMu.RLock()
+	lastSuccessfulSlotUpdate = h.lastSuccessfulSlotUpdate[base58MemoryAccountAddress]
+	if observedAtSlot <= lastSuccessfulSlotUpdate {
+		h.lastSuccessfulSlotUpdateMu.RUnlock()
+		return nil
+	}
+	h.lastSuccessfulSlotUpdateMu.RUnlock()
+
+	// Check (again after acquiring cached memory state mutex) if there's an
+	// update queued for a higher slot
+	h.highestQueuedSlotUpdateMu.RLock()
+	highestQueuedSlotUpdate = h.highestQueuedSlotUpdate[base58MemoryAccountAddress]
+	if observedAtSlot < highestQueuedSlotUpdate {
+		return nil
+	}
+	h.highestQueuedSlotUpdateMu.RUnlock()
 
 	cachedState, ok := h.cachedMemoryAccountState[base58MemoryAccountAddress]
 	if !ok {
