@@ -333,6 +333,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 
 	// Update the DB with the delta changes to the memory account state
 	var wg sync.WaitGroup
+	var cachedMemoryAccountStateUpdateMu sync.Mutex
 	for _, dbUpdate := range dbUpdates {
 		wg.Add(1)
 
@@ -360,7 +361,9 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 			err := h.ramStore.Save(ctx, record)
 			switch err {
 			case nil:
+				cachedMemoryAccountStateUpdateMu.Lock()
 				h.cachedMemoryAccountState[base58MemoryAccountAddress][dbUpdate.Index] = dbUpdate
+				cachedMemoryAccountStateUpdateMu.Unlock()
 			case ram.ErrStaleState:
 				// Should never happen given current locking structure
 			default:
