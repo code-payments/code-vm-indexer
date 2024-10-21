@@ -56,6 +56,29 @@ func (s *store) Save(_ context.Context, data *ram.Record) error {
 	return nil
 }
 
+// GetAllMemoryAccounts implements ram.Store.GetAllMemoryAccounts
+func (s *store) GetAllMemoryAccounts(ctx context.Context, vm string) ([]string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	items := s.findByVm(vm)
+	if len(items) == 0 {
+		return nil, ram.ErrAccountNotFound
+	}
+
+	uniqueMemoryAccounts := make(map[string]any)
+	for _, item := range items {
+		uniqueMemoryAccounts[item.MemoryAccount] = struct{}{}
+	}
+
+	var res []string
+	for memoryAccount := range uniqueMemoryAccounts {
+		res = append(res, memoryAccount)
+	}
+
+	return res, nil
+}
+
 // GetAllByMemoryAccount implements ram.Store.GetAllByMemoryAccount
 func (s *store) GetAllByMemoryAccount(_ context.Context, memoryAccount string) ([]*ram.Record, error) {
 	s.mu.Lock()
@@ -63,7 +86,7 @@ func (s *store) GetAllByMemoryAccount(_ context.Context, memoryAccount string) (
 
 	items := s.findByMemoryAccount(memoryAccount)
 	if len(items) == 0 {
-		return nil, ram.ErrNotFound
+		return nil, ram.ErrItemNotFound
 	}
 	return cloneRecords(items), nil
 }
@@ -75,7 +98,7 @@ func (s *store) GetAllVirtualAccountsByAddressAndType(_ context.Context, address
 
 	items := s.findByAddressAndAccountType(address, accountType)
 	if len(items) == 0 {
-		return nil, ram.ErrNotFound
+		return nil, ram.ErrItemNotFound
 	}
 	return cloneRecords(items), nil
 }
@@ -97,6 +120,16 @@ func (s *store) findByMemoryAccount(memoryAccount string) []*ram.Record {
 	var res []*ram.Record
 	for _, item := range s.records {
 		if item.MemoryAccount == memoryAccount {
+			res = append(res, item)
+		}
+	}
+	return res
+}
+
+func (s *store) findByVm(vm string) []*ram.Record {
+	var res []*ram.Record
+	for _, item := range s.records {
+		if item.Vm == vm {
 			res = append(res, item)
 		}
 	}

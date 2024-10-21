@@ -16,6 +16,7 @@ import (
 func RunTests(t *testing.T, s ram.Store, teardown func()) {
 	for _, tf := range []func(t *testing.T, s ram.Store){
 		testRoundTrip,
+		testGetAllMemoryAccounts,
 		testGetAllByMemoryAccount,
 		testGetAllVirtualAccountsByAddressAndType,
 	} {
@@ -33,10 +34,10 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		accountType := cvm.VirtualAccountTypeTimelock
 
 		_, err := s.GetAllVirtualAccountsByAddressAndType(ctx, address, accountType)
-		assert.Equal(t, ram.ErrNotFound, err)
+		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		_, err = s.GetAllByMemoryAccount(ctx, memoryAccount)
-		assert.Equal(t, ram.ErrNotFound, err)
+		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		start := time.Now()
 
@@ -91,12 +92,38 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		require.NoError(t, s.Save(ctx, expected))
 
 		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, address, accountType)
-		assert.Equal(t, ram.ErrNotFound, err)
+		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		actual, err = s.GetAllByMemoryAccount(ctx, memoryAccount)
 		require.NoError(t, err)
 		require.Len(t, actual, 1)
 		assertEquivalentRecords(t, &cloned, actual[0])
+	})
+}
+
+func testGetAllMemoryAccounts(t *testing.T, s ram.Store) {
+	t.Run("testGetAllMemoryAccounts", func(t *testing.T) {
+		ctx := context.Background()
+
+		_, err := s.GetAllMemoryAccounts(ctx, "vm2")
+		assert.Equal(t, ram.ErrAccountNotFound, err)
+
+		for i := 0; i < 3; i++ {
+			require.NoError(t, s.Save(ctx, &ram.Record{
+				Vm: fmt.Sprintf("vm%d", i),
+
+				MemoryAccount: fmt.Sprintf("memory_account_%d", i),
+				Index:         12345,
+				IsAllocated:   false,
+
+				Slot: 12345,
+			}))
+		}
+
+		actual, err := s.GetAllMemoryAccounts(ctx, "vm2")
+		require.NoError(t, err)
+		require.Len(t, actual, 1)
+		assert.Equal(t, "memory_account_2", actual[0])
 	})
 }
 

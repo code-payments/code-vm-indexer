@@ -40,6 +40,11 @@ func (s *store) Save(ctx context.Context, record *ram.Record) error {
 	return nil
 }
 
+// GetAllMemoryAccounts implements ram.Store.GetAllMemoryAccounts
+func (s *store) GetAllMemoryAccounts(ctx context.Context, vm string) ([]string, error) {
+	return dbGetAllMemoryAccounts(ctx, s.tableName, s.db, vm)
+}
+
 // GetAllByMemoryAccount implements ram.Store.GetAllByMemoryAccount
 func (s *store) GetAllByMemoryAccount(ctx context.Context, memoryAccount string) ([]*ram.Record, error) {
 	models, err := dbGetAllByMemoryAccount(ctx, s.tableName, s.db, memoryAccount)

@@ -103,13 +103,19 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 	for {
 		select {
 		case <-time.After(h.backupWorkerInterval):
-			addresses := make([]string, 0)
+			var addresses []string
+			for vm := range h.observableVmAccounts {
+				log := log.WithField("vm", vm)
 
-			h.cachedMemoryAccountStateMu.RLock()
-			for address := range h.cachedMemoryAccountState {
-				addresses = append(addresses, address)
+				addressesByVm, err := h.ramStore.GetAllMemoryAccounts(ctx, vm)
+				switch err {
+				case nil:
+					addresses = append(addresses, addressesByVm...)
+				case ram.ErrAccountNotFound:
+				default:
+					log.WithError(err).Warn("failure getting memory account addresses by vm")
+				}
 			}
-			h.cachedMemoryAccountStateMu.RUnlock()
 
 			for _, address := range addresses {
 				log := log.WithField("address", address)
@@ -228,7 +234,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 
 				cachedState[cachedVirtualAccountState.Index] = cachedVirtualAccountState
 			}
-		case ram.ErrNotFound:
+		case ram.ErrItemNotFound:
 		default:
 			log.WithError(err).Warn("failure loading memory account state from db")
 			return err

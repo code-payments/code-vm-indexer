@@ -133,6 +133,26 @@ func (m *model) dbSave(ctx context.Context, tableName string, db *sqlx.DB) error
 	return pgutil.CheckNoRows(err, ram.ErrStaleState)
 }
 
+func dbGetAllMemoryAccounts(ctx context.Context, tableName string, db *sqlx.DB, vm string) ([]string, error) {
+	res := []string{}
+
+	query := `SELECT DISTINCT(memory_account) FROM ` + tableName + `
+		WHERE vm = $1`
+
+	err := db.SelectContext(
+		ctx,
+		&res,
+		query,
+		vm,
+	)
+	if err != nil {
+		return nil, pgutil.CheckNoRows(err, ram.ErrAccountNotFound)
+	} else if len(res) == 0 {
+		return nil, ram.ErrAccountNotFound
+	}
+	return res, nil
+}
+
 func dbGetAllByMemoryAccount(ctx context.Context, tableName string, db *sqlx.DB, memoryAccount string) ([]*model, error) {
 	res := []*model{}
 
@@ -146,9 +166,9 @@ func dbGetAllByMemoryAccount(ctx context.Context, tableName string, db *sqlx.DB,
 		memoryAccount,
 	)
 	if err != nil {
-		return nil, pgutil.CheckNoRows(err, ram.ErrNotFound)
+		return nil, pgutil.CheckNoRows(err, ram.ErrItemNotFound)
 	} else if len(res) == 0 {
-		return nil, ram.ErrNotFound
+		return nil, ram.ErrItemNotFound
 	}
 	return res, nil
 }
@@ -167,9 +187,9 @@ func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName stri
 		accountType,
 	)
 	if err != nil {
-		return nil, pgutil.CheckNoRows(err, ram.ErrNotFound)
+		return nil, pgutil.CheckNoRows(err, ram.ErrItemNotFound)
 	} else if len(res) == 0 {
-		return nil, ram.ErrNotFound
+		return nil, ram.ErrItemNotFound
 	}
 	return res, nil
 }
