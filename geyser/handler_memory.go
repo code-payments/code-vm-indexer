@@ -200,6 +200,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 	h.highestQueuedSlotUpdateMu.RLock()
 	highestQueuedSlotUpdate = h.highestQueuedSlotUpdate[base58MemoryAccountAddress]
 	if observedAtSlot < highestQueuedSlotUpdate {
+		h.highestQueuedSlotUpdateMu.RUnlock()
 		return nil
 	}
 	h.highestQueuedSlotUpdateMu.RUnlock()
