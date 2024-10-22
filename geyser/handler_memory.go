@@ -18,13 +18,18 @@ import (
 	"github.com/code-payments/code-vm-indexer/data/ram"
 )
 
+const (
+	confirmationsToFinalization = 32
+)
+
 type cachedVirtualAccount struct {
-	IsInitialized bool
-	Index         int
-	Type          cvm.VirtualAccountType
-	Address       string
-	State         []byte
-	Slot          uint64
+	IsInitialized  bool
+	Index          int
+	Type           cvm.VirtualAccountType
+	Address        string
+	State          []byte
+	Slot           uint64
+	IsSlotAdvanced bool
 }
 
 type MemoryAccountWithDataUpdateHandler struct {
@@ -301,19 +306,28 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 
 		var dbUpdate *cachedVirtualAccount
 		if isInitialized {
+			var isSlotAdvanced bool
 			if cachedVirtualAccountState.IsInitialized &&
 				cachedVirtualAccountState.Address == base58VirtualAccountAddress &&
-				bytes.Equal(cachedVirtualAccountState.State, newVirtualAccountState) &&
-				observedAtSlot-cachedVirtualAccountState.Slot < 100 { // todo: configurable?
-				continue
+				bytes.Equal(cachedVirtualAccountState.State, newVirtualAccountState) {
+
+				if cachedVirtualAccountState.IsSlotAdvanced || observedAtSlot-cachedVirtualAccountState.Slot < 2*confirmationsToFinalization {
+					continue
+				}
+
+				// Advance the slot sufficiently far past finalization if it hasn't
+				// already been advanced. This is necessary for systems that rely on
+				// finalized states via the RPC service.
+				isSlotAdvanced = true
 			}
 
 			dbUpdate = &cachedVirtualAccount{
-				IsInitialized: true,
-				Index:         index,
-				Type:          virtualAccountType,
-				Address:       base58VirtualAccountAddress,
-				State:         newVirtualAccountState,
+				IsInitialized:  true,
+				Index:          index,
+				Type:           virtualAccountType,
+				Address:        base58VirtualAccountAddress,
+				State:          newVirtualAccountState,
+				IsSlotAdvanced: isSlotAdvanced,
 			}
 		} else {
 			if !cachedVirtualAccountState.IsInitialized {
