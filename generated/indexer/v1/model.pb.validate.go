@@ -455,17 +455,17 @@ func (m *VirtualDurableNonce) Validate() error {
 		}
 	}
 
-	if m.GetNonce() == nil {
+	if m.GetValue() == nil {
 		return VirtualDurableNonceValidationError{
-			field:  "Nonce",
+			field:  "Value",
 			reason: "value is required",
 		}
 	}
 
-	if v, ok := interface{}(m.GetNonce()).(interface{ Validate() error }); ok {
+	if v, ok := interface{}(m.GetValue()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return VirtualDurableNonceValidationError{
-				field:  "Nonce",
+				field:  "Value",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}

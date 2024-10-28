@@ -133,7 +133,7 @@ func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetV
 		Item: &indexerpb.VirtualDurableNonceWithStorageMetadata{
 			Account: &indexerpb.VirtualDurableNonce{
 				Address: &indexerpb.Address{Value: vdn.Address},
-				Nonce:   &indexerpb.Hash{Value: vdn.Nonce[:]},
+				Value:   &indexerpb.Hash{Value: vdn.Value[:]},
 			},
 			Storage: &indexerpb.VirtualAccountStorage{
 				Storage: &indexerpb.VirtualAccountStorage_Memory{

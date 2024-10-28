@@ -54,7 +54,7 @@ message VirtualTimelockAccount {
 message VirtualDurableNonce {
     Address address = 1 [(validate.rules).message.required = true];
 
-    Hash nonce = 2 [(validate.rules).message.required = true];
+    Hash value = 2 [(validate.rules).message.required = true];
 }
 
 message VirtualRelayAccount {

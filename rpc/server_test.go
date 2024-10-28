@@ -46,7 +46,7 @@ func TestGetVirtualDurableNonce_HappyPath_Memory(t *testing.T) {
 	assert.Equal(t, indexerpb.GetVirtualDurableNonceResponse_OK, resp.Result)
 
 	assert.EqualValues(t, vdn.Address, resp.Item.Account.Address.Value)
-	assert.EqualValues(t, vdn.Nonce[:], resp.Item.Account.Nonce.Value)
+	assert.EqualValues(t, vdn.Value[:], resp.Item.Account.Value.Value)
 
 	memoryStorage := resp.Item.Storage.GetMemory()
 	require.NotNil(t, memoryStorage)
@@ -202,14 +202,14 @@ func (e *testEnv) saveVirtualAccountToRamDb(
 
 func generateVirtualDurableNonce() *cvm.VirtualDurableNonce {
 	var address [32]byte
-	var nonce [32]byte
+	var value [32]byte
 
 	rand.Read(address[:])
-	rand.Read(nonce[:])
+	rand.Read(value[:])
 
 	return &cvm.VirtualDurableNonce{
 		Address: address[:],
-		Nonce:   nonce,
+		Value:   value,
 	}
 }
 
