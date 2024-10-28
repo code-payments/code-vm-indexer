@@ -121,24 +121,22 @@ func TestGetVirtualRelayAccount_HappyPath_Memory(t *testing.T) {
 
 	resp, err := env.client.GetVirtualRelayAccount(env.ctx, &indexerpb.GetVirtualRelayAccountRequest{
 		VmAccount: &indexerpb.Address{Value: vmAccount.PublicKey().ToBytes()},
-		Address:   &indexerpb.Address{Value: vra.Address},
+		Address:   &indexerpb.Address{Value: vra.Target},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, indexerpb.GetVirtualRelayAccountResponse_NOT_FOUND, resp.Result)
 
-	ramRecord := env.saveVirtualAccountToRamDb(t, vmAccount, cvm.VirtualAccountTypeRelay, base58.Encode(vra.Address), vra.Marshal())
+	ramRecord := env.saveVirtualAccountToRamDb(t, vmAccount, cvm.VirtualAccountTypeRelay, base58.Encode(vra.Target), vra.Marshal())
 
 	resp, err = env.client.GetVirtualRelayAccount(env.ctx, &indexerpb.GetVirtualRelayAccountRequest{
 		VmAccount: &indexerpb.Address{Value: vmAccount.PublicKey().ToBytes()},
-		Address:   &indexerpb.Address{Value: vra.Address},
+		Address:   &indexerpb.Address{Value: vra.Target},
 	})
 	require.NoError(t, err)
 
 	assert.Equal(t, indexerpb.GetVirtualRelayAccountResponse_OK, resp.Result)
 
-	assert.EqualValues(t, vra.Address, resp.Item.Account.Address.Value)
-	assert.EqualValues(t, vra.Commitment[:], resp.Item.Account.Commitment.Value)
-	assert.EqualValues(t, vra.RecentRoot[:], resp.Item.Account.RecentRoot.Value)
+	assert.EqualValues(t, vra.Target, resp.Item.Account.Target.Value)
 	assert.EqualValues(t, vra.Destination, resp.Item.Account.Destination.Value)
 
 	memoryStorage := resp.Item.Storage.GetMemory()
@@ -235,19 +233,13 @@ func generateVirtualTimelockAccount(owner ed25519.PublicKey) *cvm.VirtualTimeloc
 
 func generateVirtualRelayAccount() *cvm.VirtualRelayAccount {
 	var address [32]byte
-	var commitment [32]byte
-	var recentRoot [32]byte
 	var destination [32]byte
 
 	rand.Read(address[:])
-	rand.Read(commitment[:])
-	rand.Read(recentRoot[:])
 	rand.Read(destination[:])
 
 	return &cvm.VirtualRelayAccount{
-		Address:     address[:],
-		Commitment:  commitment,
-		RecentRoot:  recentRoot,
+		Target:      address[:],
 		Destination: destination[:],
 	}
 }

@@ -188,9 +188,7 @@ func (s *server) GetVirtualRelayAccount(ctx context.Context, req *indexerpb.GetV
 		Result: indexerpb.GetVirtualRelayAccountResponse_OK,
 		Item: &indexerpb.VirtualRelayAccountWithStorageMetadata{
 			Account: &indexerpb.VirtualRelayAccount{
-				Address:     &indexerpb.Address{Value: vra.Address},
-				Commitment:  &indexerpb.Hash{Value: vra.Commitment[:]},
-				RecentRoot:  &indexerpb.Hash{Value: vra.RecentRoot[:]},
+				Target:      &indexerpb.Address{Value: vra.Target},
 				Destination: &indexerpb.Address{Value: vra.Destination},
 			},
 			Storage: &indexerpb.VirtualAccountStorage{

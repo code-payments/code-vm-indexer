@@ -58,13 +58,9 @@ message VirtualDurableNonce {
 }
 
 message VirtualRelayAccount {
-    Address address = 1 [(validate.rules).message.required = true];
+    Address target = 1 [(validate.rules).message.required = true];
 
-    Hash commitment = 2 [(validate.rules).message.required = true];
-
-    Hash recent_root = 3 [(validate.rules).message.required = true];
-
-    Address destination = 4 [(validate.rules).message.required = true];
+    Address destination = 2 [(validate.rules).message.required = true];
 }
 
 message VirtualAccountStorage {

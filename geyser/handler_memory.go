@@ -250,7 +250,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 
 	// Track delta changes to the memory account state to be persisted into the DB
 	var dbUpdates []*cachedVirtualAccount
-	for index, item := range state.Data.Items {
+	for index := range state.Data.State {
 		log := log.WithField("index", index)
 
 		cachedVirtualAccountState, ok := cachedState[index]
@@ -265,7 +265,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 			continue
 		}
 
-		isInitialized := item.IsAllocated()
+		isInitialized := state.Data.IsAllocated(index)
 
 		var base58VirtualAccountAddress string
 		var newVirtualAccountState []byte
@@ -296,7 +296,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 					log.WithError(err).Warn("failure unmarshalling virtual relay account")
 					return err
 				}
-				base58VirtualAccountAddress = base58.Encode(virtualAccountState.Address)
+				base58VirtualAccountAddress = base58.Encode(virtualAccountState.Target)
 			default:
 				// Changelog item, which isn't being tracked in the virtual accounts DB,
 				// so treat it as an unititialized memory item

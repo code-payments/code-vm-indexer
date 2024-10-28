@@ -539,51 +539,17 @@ func (m *VirtualRelayAccount) Validate() error {
 		return nil
 	}
 
-	if m.GetAddress() == nil {
+	if m.GetTarget() == nil {
 		return VirtualRelayAccountValidationError{
-			field:  "Address",
+			field:  "Target",
 			reason: "value is required",
 		}
 	}
 
-	if v, ok := interface{}(m.GetAddress()).(interface{ Validate() error }); ok {
+	if v, ok := interface{}(m.GetTarget()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return VirtualRelayAccountValidationError{
-				field:  "Address",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
-	if m.GetCommitment() == nil {
-		return VirtualRelayAccountValidationError{
-			field:  "Commitment",
-			reason: "value is required",
-		}
-	}
-
-	if v, ok := interface{}(m.GetCommitment()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return VirtualRelayAccountValidationError{
-				field:  "Commitment",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
-	if m.GetRecentRoot() == nil {
-		return VirtualRelayAccountValidationError{
-			field:  "RecentRoot",
-			reason: "value is required",
-		}
-	}
-
-	if v, ok := interface{}(m.GetRecentRoot()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return VirtualRelayAccountValidationError{
-				field:  "RecentRoot",
+				field:  "Target",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
