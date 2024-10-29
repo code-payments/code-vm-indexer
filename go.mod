@@ -3,7 +3,7 @@ module github.com/code-payments/code-vm-indexer
 go 1.23.0
 
 require (
-	github.com/code-payments/code-server v1.10.20-0.20241028195415-b90f9f219724
+	github.com/code-payments/code-server v1.10.20-0.20241029152132-69085d2aed9a
 	github.com/envoyproxy/protoc-gen-validate v1.0.4
 	github.com/golang/protobuf v1.5.4
 	github.com/jackc/pgx/v4 v4.13.0
