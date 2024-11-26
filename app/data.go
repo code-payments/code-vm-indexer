@@ -29,6 +29,7 @@ const (
 	postgresHostConfigEnvName     = "POSTGRES_HOST"
 	postgresPortConfigEnvName     = "POSTGRES_PORT"
 	postgresDbConfigEnvName       = "POSTGRES_DB_NAME"
+	postgresMaxOpenConnsEnvName   = "POSTGRES_MAX_OPEN_CONNS"
 
 	ramTableNameEnvName = "RAM_TABLE_NAME"
 )
@@ -56,6 +57,7 @@ func NewDataProvider() (*DataProvider, error) {
 		hostConfig := env.NewStringConfig(postgresHostConfigEnvName, "")
 		portConfig := env.NewInt64Config(postgresPortConfigEnvName, 0)
 		dbConfig := env.NewStringConfig(postgresDbConfigEnvName, "")
+		maxOpenConnsConfig := env.NewUint64Config(postgresMaxOpenConnsEnvName, 64)
 		ramTableNameConfig := env.NewStringConfig(ramTableNameEnvName, "")
 
 		db, err := pg.NewWithUsernameAndPassword(
@@ -68,6 +70,8 @@ func NewDataProvider() (*DataProvider, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		db.SetMaxOpenConns(int(maxOpenConnsConfig.Get(ctx)))
 
 		dp.Ram = postgres_ram_store.New(db, ramTableNameConfig.Get(ctx))
 	default:
