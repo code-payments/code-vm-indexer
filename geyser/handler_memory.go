@@ -108,7 +108,7 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 	for {
 		select {
 		case <-time.After(h.backupWorkerInterval):
-			var addresses []string
+			addresses := []string{"F9RMtR2mjk7aRiLLjYGajvAeyPqn4BNDPy49amgCmyZh", "Cmd2UP1qDMMUvdLVN1Q2TxsqcdE2otneZHWbTsrq6cF7", "9tR1Q8GL5dUhNBMN1dENsiVVNCtvcUUhiFV8YtNPc2gg"}
 			for vm := range h.observableVmAccounts {
 				log := log.WithField("vm", vm)
 
@@ -348,7 +348,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 	// Update the DB with the delta changes to the memory account state
 	var wg sync.WaitGroup
 	var cachedMemoryAccountStateUpdateMu sync.Mutex
-	for _, dbUpdate := range dbUpdates {
+	for i, dbUpdate := range dbUpdates {
 		wg.Add(1)
 
 		go func(dbUpdate *cachedVirtualAccount) {
@@ -384,6 +384,10 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 				log.WithError(err).Warn("failure updating db record")
 			}
 		}(dbUpdate)
+
+		if i%250 == 0 {
+			time.Sleep(time.Second / 4)
+		}
 	}
 	wg.Wait()
 
