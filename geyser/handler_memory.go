@@ -108,7 +108,7 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 	for {
 		select {
 		case <-time.After(h.backupWorkerInterval):
-			addresses := []string{"F9RMtR2mjk7aRiLLjYGajvAeyPqn4BNDPy49amgCmyZh", "Cmd2UP1qDMMUvdLVN1Q2TxsqcdE2otneZHWbTsrq6cF7", "9tR1Q8GL5dUhNBMN1dENsiVVNCtvcUUhiFV8YtNPc2gg"}
+			var addresses []string
 			for vm := range h.observableVmAccounts {
 				log := log.WithField("vm", vm)
 
