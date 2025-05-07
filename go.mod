@@ -3,7 +3,7 @@ module github.com/code-payments/code-vm-indexer
 go 1.23.0
 
 require (
-	github.com/code-payments/code-server v1.10.21-0.20250402193413-bc1bb0344dc7
+	github.com/code-payments/code-server v1.10.21-0.20250507142349-9c8923fb60b8
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/golang/protobuf v1.5.4
 	github.com/jackc/pgx/v4 v4.13.0
@@ -27,7 +27,7 @@ require (
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/bits-and-blooms/bloom/v3 v3.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.0 // indirect
-	github.com/code-payments/code-protobuf-api v1.19.1-0.20250402192552-177b85d5508d // indirect
+	github.com/code-payments/code-protobuf-api v1.19.1-0.20250429171947-b8896029c856 // indirect
 	github.com/containerd/continuity v0.0.0-20190827140505-75bee3e2ccb6 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v20.10.7+incompatible // indirect
