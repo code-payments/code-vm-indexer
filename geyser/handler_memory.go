@@ -74,14 +74,14 @@ func NewMemoryAccountWithDataUpdateHandler(solanaClient solana.Client, ramStore 
 }
 
 // Handle implements geyser.ProgramAccountUpdateHandler.Handle
-func (h *MemoryAccountWithDataUpdateHandler) Handle(ctx context.Context, update *geyserpb.AccountUpdate) error {
+func (h *MemoryAccountWithDataUpdateHandler) Handle(ctx context.Context, update *geyserpb.SubscribeUpdateAccount) error {
 	// Simply fetch finalized account state as the safest option
 	var finalizedData []byte
 	var finalizedSlot uint64
 	var err error
 	_, err = retry.Retry(
 		func() error {
-			finalizedData, finalizedSlot, err = h.solanaClient.GetAccountDataAfterBlock(update.Pubkey, update.Slot)
+			finalizedData, finalizedSlot, err = h.solanaClient.GetAccountDataAfterBlock(update.Account.Pubkey, update.Slot)
 			return err
 		},
 		waitForFinalizationRetryStrategies...,
@@ -94,7 +94,7 @@ func (h *MemoryAccountWithDataUpdateHandler) Handle(ctx context.Context, update 
 	if err := state.Unmarshal(finalizedData); err != nil {
 		return nil
 	}
-	return h.onStateObserved(ctx, update.Pubkey, finalizedSlot, &state)
+	return h.onStateObserved(ctx, update.Account.Pubkey, finalizedSlot, &state)
 }
 
 // RunBackupWorker implements geyser.ProgramAccountUpdateHandler.RunBackupWorker

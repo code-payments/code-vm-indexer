@@ -17,7 +17,7 @@ type ProgramAccountUpdateHandler interface {
 	// to come in order. Implementations must be idempotent and should not
 	// trust the account data passed in. Always refer to finalized blockchain
 	// state from another RPC provider.
-	Handle(ctx context.Context, update *geyserpb.AccountUpdate) error
+	Handle(ctx context.Context, update *geyserpb.SubscribeUpdateAccount) error
 
 	// RunBackupWorker runs the backup worker for the handler, which should
 	// periodically fill any gaps of data due to missed real-time events from

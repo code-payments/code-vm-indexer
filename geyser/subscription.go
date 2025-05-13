@@ -4,13 +4,15 @@ import (
 	"context"
 	"time"
 
+	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
-
-	"github.com/code-payments/code-server/pkg/solana/cvm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 
 	geyserpb "github.com/code-payments/code-vm-indexer/generated/geyser/v1"
+
+	"github.com/code-payments/code-server/pkg/solana/cvm"
 )
 
 const (
@@ -18,34 +20,30 @@ const (
 )
 
 var (
-	ErrSubscriptionFallenBehind = errors.New("subscription stream fell behind")
-	ErrTimeoutReceivingUpdate   = errors.New("timed out receiving update")
+	ErrTimeoutReceivingUpdate = errors.New("timed out receiving update")
 )
 
-func newGeyserClient(ctx context.Context, endpoint string) (geyserpb.GeyserClient, error) {
-	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func newGeyserClient(endpoint, xToken string) (geyserpb.GeyserClient, error) {
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	if len(xToken) > 0 {
+		opts = append(
+			opts,
+			grpc.WithUnaryInterceptor(newXTokenUnaryClientInterceptor(xToken)),
+			grpc.WithStreamInterceptor(newXTokenStreamClientInterceptor(xToken)),
+		)
+	}
+
+	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	client := geyserpb.NewGeyserClient(conn)
 
-	// Unfortunately the RPCs we use no longer support hearbeats. We'll let each
-	// individual subscriber determine what an appropriate timeout to receive a
-	// message should be.
-	/*
-		heartbeatResp, err := client.GetHeartbeatInterval(ctx, &geyserpb.EmptyRequest{})
-		if err != nil {
-			return nil, 0, errors.Wrap(err, "error getting heartbeat interval")
-		}
-
-		heartbeatTimeout := time.Duration(2 * heartbeatResp.HeartbeatIntervalMs * uint64(time.Millisecond))
-	*/
-
 	return client, nil
 }
 
-func boundedProgramUpdateRecv(ctx context.Context, streamer geyserpb.Geyser_SubscribeProgramUpdatesClient, timeout time.Duration) (update *geyserpb.TimestampedAccountUpdate, err error) {
+func boundedRecv(ctx context.Context, streamer geyserpb.Geyser_SubscribeClient, timeout time.Duration) (update *geyserpb.SubscribeUpdate, err error) {
 	done := make(chan struct{})
 	go func() {
 		update, err = streamer.Recv()
@@ -53,6 +51,8 @@ func boundedProgramUpdateRecv(ctx context.Context, streamer geyserpb.Geyser_Subs
 	}()
 
 	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	case <-time.After(timeout):
 		return nil, ErrTimeoutReceivingUpdate
 	case <-done:
@@ -60,7 +60,7 @@ func boundedProgramUpdateRecv(ctx context.Context, streamer geyserpb.Geyser_Subs
 	}
 }
 
-func (w *Worker) subscribeToProgramUpdatesFromGeyser(ctx context.Context, endpoint string) error {
+func (w *Worker) subscribeToProgramUpdatesFromGeyser(ctx context.Context, endpoint, xToken string) error {
 	log := w.log.WithField("method", "subscribeToProgramUpdatesFromGeyser")
 	log.Debug("subscription started")
 
@@ -68,33 +68,43 @@ func (w *Worker) subscribeToProgramUpdatesFromGeyser(ctx context.Context, endpoi
 		log.Debug("subscription stopped")
 	}()
 
-	client, err := newGeyserClient(ctx, endpoint)
+	client, err := newGeyserClient(endpoint, xToken)
 	if err != nil {
 		return errors.Wrap(err, "error creating client")
 	}
 
-	streamer, err := client.SubscribeProgramUpdates(ctx, &geyserpb.SubscribeProgramsUpdatesRequest{
-		Programs: [][]byte{cvm.PROGRAM_ID},
-	})
+	streamer, err := client.Subscribe(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error opening subscription stream")
 	}
 
+	req := &geyserpb.SubscribeRequest{
+		Accounts: make(map[string]*geyserpb.SubscribeRequestFilterAccounts),
+	}
+	req.Accounts["accounts_subscription"] = &geyserpb.SubscribeRequestFilterAccounts{
+		Owner: []string{base58.Encode(cvm.PROGRAM_ID)},
+	}
+	finalizedCommitmentLevel := geyserpb.CommitmentLevel_FINALIZED
+	req.Commitment = &finalizedCommitmentLevel
+	err = streamer.Send(req)
+	if err != nil {
+		return errors.Wrap(err, "error sending subscription request")
+	}
+
 	for {
-		update, err := boundedProgramUpdateRecv(ctx, streamer, defaultStreamSubscriptionTimeout)
+		update, err := boundedRecv(ctx, streamer, defaultStreamSubscriptionTimeout)
 		if err != nil {
-			return errors.Wrap(err, "error receiving update")
+			return errors.Wrap(err, "error recieving update")
 		}
 
-		messageAge := time.Since(update.Ts.AsTime())
-		if messageAge > defaultStreamSubscriptionTimeout {
-			log.WithField("message_age", messageAge).Warn(ErrSubscriptionFallenBehind.Error())
-			return ErrSubscriptionFallenBehind
+		accountUpdate := update.GetAccount()
+		if accountUpdate == nil {
+			continue
 		}
 
 		// Ignore startup updates. We only care about real-time updates due to
 		// transactions.
-		if update.AccountUpdate.IsStartup {
+		if accountUpdate.IsStartup {
 			continue
 		}
 
@@ -103,9 +113,42 @@ func (w *Worker) subscribeToProgramUpdatesFromGeyser(ctx context.Context, endpoi
 		// backing up the Geyser plugin, which kills this subscription and we end up
 		// missing updates.
 		select {
-		case w.programUpdatesChan <- update.AccountUpdate:
+		case w.programUpdatesChan <- accountUpdate:
 		default:
 			log.Warn("dropping update because queue is full")
 		}
 	}
+}
+
+func newXTokenUnaryClientInterceptor(xToken string) grpc.UnaryClientInterceptor {
+	return func(
+		ctx context.Context,
+		method string,
+		req, reply interface{},
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		ctx = withXToken(ctx, xToken)
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
+func newXTokenStreamClientInterceptor(xToken string) grpc.StreamClientInterceptor {
+	return func(
+		ctx context.Context,
+		desc *grpc.StreamDesc,
+		cc *grpc.ClientConn,
+		method string,
+		streamer grpc.Streamer,
+		opts ...grpc.CallOption,
+	) (grpc.ClientStream, error) {
+		ctx = withXToken(ctx, xToken)
+		return streamer(ctx, desc, cc, method, opts...)
+	}
+}
+
+func withXToken(ctx context.Context, xToken string) context.Context {
+	md := metadata.Pairs("x-token", xToken)
+	return metadata.NewOutgoingContext(ctx, md)
 }

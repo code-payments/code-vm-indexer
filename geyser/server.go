@@ -17,7 +17,7 @@ type Worker struct {
 	log  *logrus.Entry
 	conf *conf
 
-	programUpdatesChan    chan *geyserpb.AccountUpdate
+	programUpdatesChan    chan *geyserpb.SubscribeUpdateAccount
 	programUpdateHandlers map[string]ProgramAccountUpdateHandler
 }
 
@@ -28,7 +28,7 @@ func NewWorker(ctx context.Context, solanaClient solana.Client, ramStore ram.Sto
 		log:  logrus.StandardLogger().WithField("type", "geyser/worker"),
 		conf: conf,
 
-		programUpdatesChan:    make(chan *geyserpb.AccountUpdate, conf.programUpdateQueueSize.Get(context.Background())),
+		programUpdatesChan:    make(chan *geyserpb.SubscribeUpdateAccount, conf.programUpdateQueueSize.Get(context.Background())),
 		programUpdateHandlers: initializeProgramAccountUpdateHandlers(conf, solanaClient, ramStore),
 	}
 }

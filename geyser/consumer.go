@@ -20,7 +20,7 @@ func (w *Worker) consumeGeyserProgramUpdateEvents(ctx context.Context) error {
 		default:
 		}
 
-		err := w.subscribeToProgramUpdatesFromGeyser(ctx, w.conf.grpcPluginEndpoint.Get(ctx))
+		err := w.subscribeToProgramUpdatesFromGeyser(ctx, w.conf.grpcPluginEndpoint.Get(ctx), w.conf.grpcPluginXToken.Get(ctx))
 		if err != nil && !errors.Is(err, context.Canceled) {
 			log.WithError(err).Warn("program update consumer unexpectedly terminated")
 		}
@@ -44,16 +44,16 @@ func (w *Worker) programUpdateWorker(ctx context.Context, id int) {
 
 	for update := range w.programUpdatesChan {
 		func() {
-			base58PublicKey := base58.Encode(update.Pubkey)
-			base58ProgramAddress := base58.Encode(update.Owner)
+			base58PublicKey := base58.Encode(update.Account.Pubkey)
+			base58ProgramAddress := base58.Encode(update.Account.Owner)
 
 			log := log.WithFields(logrus.Fields{
 				"account": base58PublicKey,
 				"program": base58ProgramAddress,
 				"slot":    update.Slot,
 			})
-			if update.TxSignature != nil {
-				log = log.WithField("transaction", *update.TxSignature)
+			if len(update.Account.TxnSignature) > 0 {
+				log = log.WithField("transaction", base58.Encode(update.Account.TxnSignature))
 			}
 
 			handler, ok := w.programUpdateHandlers[base58ProgramAddress]
