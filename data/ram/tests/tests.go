@@ -29,11 +29,12 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 	t.Run("testRoundTrip", func(t *testing.T) {
 		ctx := context.Background()
 
+		vm := "vm"
 		memoryAccount := "memory_account"
 		address := "address"
 		accountType := cvm.VirtualAccountTypeTimelock
 
-		_, err := s.GetAllVirtualAccountsByAddressAndType(ctx, address, accountType)
+		_, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vm, address, accountType)
 		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		_, err = s.GetAllByMemoryAccount(ctx, memoryAccount)
@@ -42,7 +43,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		start := time.Now()
 
 		expected := &ram.Record{
-			Vm: "vm",
+			Vm: vm,
 
 			MemoryAccount: memoryAccount,
 			Index:         12345,
@@ -61,7 +62,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		assert.EqualValues(t, 1, expected.Id)
 		assert.True(t, expected.LastUpdatedAt.After(start))
 
-		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, address, accountType)
+		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vm, address, accountType)
 		require.NoError(t, err)
 		require.Len(t, actual, 1)
 		assertEquivalentRecords(t, &cloned, actual[0])
@@ -77,7 +78,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		expected.Data = nil
 		assert.Equal(t, ram.ErrStaleState, s.Save(ctx, expected))
 
-		actual, err = s.GetAllVirtualAccountsByAddressAndType(ctx, address, accountType)
+		actual, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vm, address, accountType)
 		require.NoError(t, err)
 		require.Len(t, actual, 1)
 		assertEquivalentRecords(t, &cloned, actual[0])
@@ -91,7 +92,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		cloned = expected.Clone()
 		require.NoError(t, s.Save(ctx, expected))
 
-		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, address, accountType)
+		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vm, address, accountType)
 		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		actual, err = s.GetAllByMemoryAccount(ctx, memoryAccount)
@@ -172,6 +173,7 @@ func testGetAllVirtualAccountsByAddressAndType(t *testing.T, s ram.Store) {
 	t.Run("testGetAllVirtualAccountsByAddressAndType", func(t *testing.T) {
 		ctx := context.Background()
 
+		vm := "vm"
 		addressToQuery := "address0"
 
 		var expected []*ram.Record
@@ -202,12 +204,15 @@ func testGetAllVirtualAccountsByAddressAndType(t *testing.T, s ram.Store) {
 			}
 		}
 
-		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, addressToQuery, cvm.VirtualAccountTypeDurableNonce)
+		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vm, addressToQuery, cvm.VirtualAccountTypeDurableNonce)
 		require.NoError(t, err)
 		require.Len(t, actual, len(expected))
 		for i, record := range actual {
 			assertEquivalentRecords(t, record, expected[i])
 		}
+
+		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vm+"-other", addressToQuery, cvm.VirtualAccountTypeDurableNonce)
+		assert.Equal(t, ram.ErrItemNotFound, err)
 	})
 }
 

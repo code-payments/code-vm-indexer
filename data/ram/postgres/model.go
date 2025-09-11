@@ -173,16 +173,17 @@ func dbGetAllByMemoryAccount(ctx context.Context, tableName string, db *sqlx.DB,
 	return res, nil
 }
 
-func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName string, db *sqlx.DB, address string, accountType cvm.VirtualAccountType) ([]*model, error) {
+func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName string, db *sqlx.DB, vm, address string, accountType cvm.VirtualAccountType) ([]*model, error) {
 	res := []*model{}
 
 	query := `SELECT id, vm, memory_account, index, is_allocated, address, item_type, data, slot, last_updated_at FROM ` + tableName + `
-		WHERE address = $1 AND item_type = $2`
+		WHERE vm = $1 AND address = $2 AND item_type = $3`
 
 	err := db.SelectContext(
 		ctx,
 		&res,
 		query,
+		vm,
 		address,
 		accountType,
 	)

@@ -39,7 +39,12 @@ func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.
 		"owner":  base58.Encode(req.Owner.Value),
 	})
 
-	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(ctx, base58.Encode(req.Owner.Value), cvm.VirtualAccountTypeTimelock)
+	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(
+		ctx,
+		base58.Encode(req.VmAccount.Value),
+		base58.Encode(req.Owner.Value),
+		cvm.VirtualAccountTypeTimelock,
+	)
 	if err == ram.ErrItemNotFound {
 		return &indexerpb.GetVirtualTimelockAccountsResponse{
 			Result: indexerpb.GetVirtualTimelockAccountsResponse_NOT_FOUND,
@@ -100,7 +105,12 @@ func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetV
 		"address": base58.Encode(req.Address.Value),
 	})
 
-	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(ctx, base58.Encode(req.Address.Value), cvm.VirtualAccountTypeDurableNonce)
+	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(
+		ctx,
+		base58.Encode(req.VmAccount.Value),
+		base58.Encode(req.Address.Value),
+		cvm.VirtualAccountTypeDurableNonce,
+	)
 	if err == ram.ErrItemNotFound {
 		return &indexerpb.GetVirtualDurableNonceResponse{
 			Result: indexerpb.GetVirtualDurableNonceResponse_NOT_FOUND,
@@ -156,7 +166,12 @@ func (s *server) GetVirtualRelayAccount(ctx context.Context, req *indexerpb.GetV
 		"address": base58.Encode(req.Address.Value),
 	})
 
-	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(ctx, base58.Encode(req.Address.Value), cvm.VirtualAccountTypeRelay)
+	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(
+		ctx,
+		base58.Encode(req.VmAccount.Value),
+		base58.Encode(req.Address.Value),
+		cvm.VirtualAccountTypeRelay,
+	)
 	if err == ram.ErrItemNotFound {
 		return &indexerpb.GetVirtualRelayAccountResponse{
 			Result: indexerpb.GetVirtualRelayAccountResponse_NOT_FOUND,
