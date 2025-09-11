@@ -111,42 +111,6 @@ func TestGetVirtualTimelockAccounts_HappyPath_Memory(t *testing.T) {
 	}
 }
 
-func TestGetVirtualRelayAccount_HappyPath_Memory(t *testing.T) {
-	env, cleanup := setup(t)
-	defer cleanup()
-
-	vmAccount := testutil.NewRandomAccount(t)
-
-	vra := generateVirtualRelayAccount()
-
-	resp, err := env.client.GetVirtualRelayAccount(env.ctx, &indexerpb.GetVirtualRelayAccountRequest{
-		VmAccount: &indexerpb.Address{Value: vmAccount.PublicKey().ToBytes()},
-		Address:   &indexerpb.Address{Value: vra.Target},
-	})
-	require.NoError(t, err)
-	assert.Equal(t, indexerpb.GetVirtualRelayAccountResponse_NOT_FOUND, resp.Result)
-
-	ramRecord := env.saveVirtualAccountToRamDb(t, vmAccount, cvm.VirtualAccountTypeRelay, base58.Encode(vra.Target), vra.Marshal())
-
-	resp, err = env.client.GetVirtualRelayAccount(env.ctx, &indexerpb.GetVirtualRelayAccountRequest{
-		VmAccount: &indexerpb.Address{Value: vmAccount.PublicKey().ToBytes()},
-		Address:   &indexerpb.Address{Value: vra.Target},
-	})
-	require.NoError(t, err)
-
-	assert.Equal(t, indexerpb.GetVirtualRelayAccountResponse_OK, resp.Result)
-
-	assert.EqualValues(t, vra.Target, resp.Item.Account.Target.Value)
-	assert.EqualValues(t, vra.Destination, resp.Item.Account.Destination.Value)
-
-	memoryStorage := resp.Item.Storage.GetMemory()
-	require.NotNil(t, memoryStorage)
-	assert.Equal(t, ramRecord.MemoryAccount, base58.Encode(memoryStorage.Account.Value))
-	assert.EqualValues(t, ramRecord.Index, memoryStorage.Index)
-
-	assert.Equal(t, ramRecord.Slot, resp.Item.Slot)
-}
-
 type testEnv struct {
 	ctx      context.Context
 	client   indexerpb.IndexerClient

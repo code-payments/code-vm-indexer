@@ -57,12 +57,6 @@ message VirtualDurableNonce {
     Hash value = 2 [(validate.rules).message.required = true];
 }
 
-message VirtualRelayAccount {
-    Address target = 1 [(validate.rules).message.required = true];
-
-    Address destination = 2 [(validate.rules).message.required = true];
-}
-
 message VirtualAccountStorage {
     oneof storage {
         option (validate.required) = true;
@@ -94,14 +88,6 @@ message VirtualTimelockAccountWithStorageMetadata {
 
 message VirtualDurableNonceWithStorageMetadata {
     VirtualDurableNonce account = 1 [(validate.rules).message.required = true];
-
-    VirtualAccountStorage storage = 2 [(validate.rules).message.required = true];
-
-    uint64 slot = 3;
-}
-
-message VirtualRelayAccountWithStorageMetadata {
-    VirtualRelayAccount account = 1 [(validate.rules).message.required = true];
 
     VirtualAccountStorage storage = 2 [(validate.rules).message.required = true];
 

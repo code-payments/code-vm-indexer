@@ -26,8 +26,6 @@ type IndexerClient interface {
 	GetVirtualTimelockAccounts(ctx context.Context, in *GetVirtualTimelockAccountsRequest, opts ...grpc.CallOption) (*GetVirtualTimelockAccountsResponse, error)
 	// GetVirtualDurableNonce gets a virtual durable nonce for a given address
 	GetVirtualDurableNonce(ctx context.Context, in *GetVirtualDurableNonceRequest, opts ...grpc.CallOption) (*GetVirtualDurableNonceResponse, error)
-	// GetVirtualRelayAccount gets a virtual relay account for a given address
-	GetVirtualRelayAccount(ctx context.Context, in *GetVirtualRelayAccountRequest, opts ...grpc.CallOption) (*GetVirtualRelayAccountResponse, error)
 }
 
 type indexerClient struct {
@@ -56,15 +54,6 @@ func (c *indexerClient) GetVirtualDurableNonce(ctx context.Context, in *GetVirtu
 	return out, nil
 }
 
-func (c *indexerClient) GetVirtualRelayAccount(ctx context.Context, in *GetVirtualRelayAccountRequest, opts ...grpc.CallOption) (*GetVirtualRelayAccountResponse, error) {
-	out := new(GetVirtualRelayAccountResponse)
-	err := c.cc.Invoke(ctx, "/code.vm.v1.Indexer/GetVirtualRelayAccount", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // IndexerServer is the server API for Indexer service.
 // All implementations must embed UnimplementedIndexerServer
 // for forward compatibility
@@ -73,8 +62,6 @@ type IndexerServer interface {
 	GetVirtualTimelockAccounts(context.Context, *GetVirtualTimelockAccountsRequest) (*GetVirtualTimelockAccountsResponse, error)
 	// GetVirtualDurableNonce gets a virtual durable nonce for a given address
 	GetVirtualDurableNonce(context.Context, *GetVirtualDurableNonceRequest) (*GetVirtualDurableNonceResponse, error)
-	// GetVirtualRelayAccount gets a virtual relay account for a given address
-	GetVirtualRelayAccount(context.Context, *GetVirtualRelayAccountRequest) (*GetVirtualRelayAccountResponse, error)
 	mustEmbedUnimplementedIndexerServer()
 }
 
@@ -87,9 +74,6 @@ func (UnimplementedIndexerServer) GetVirtualTimelockAccounts(context.Context, *G
 }
 func (UnimplementedIndexerServer) GetVirtualDurableNonce(context.Context, *GetVirtualDurableNonceRequest) (*GetVirtualDurableNonceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVirtualDurableNonce not implemented")
-}
-func (UnimplementedIndexerServer) GetVirtualRelayAccount(context.Context, *GetVirtualRelayAccountRequest) (*GetVirtualRelayAccountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVirtualRelayAccount not implemented")
 }
 func (UnimplementedIndexerServer) mustEmbedUnimplementedIndexerServer() {}
 
@@ -140,24 +124,6 @@ func _Indexer_GetVirtualDurableNonce_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Indexer_GetVirtualRelayAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVirtualRelayAccountRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(IndexerServer).GetVirtualRelayAccount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/code.vm.v1.Indexer/GetVirtualRelayAccount",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexerServer).GetVirtualRelayAccount(ctx, req.(*GetVirtualRelayAccountRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Indexer_ServiceDesc is the grpc.ServiceDesc for Indexer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -172,10 +138,6 @@ var Indexer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVirtualDurableNonce",
 			Handler:    _Indexer_GetVirtualDurableNonce_Handler,
-		},
-		{
-			MethodName: "GetVirtualRelayAccount",
-			Handler:    _Indexer_GetVirtualRelayAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

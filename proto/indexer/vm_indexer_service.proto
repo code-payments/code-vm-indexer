@@ -13,9 +13,6 @@ service Indexer {
 
     // GetVirtualDurableNonce gets a virtual durable nonce for a given address
     rpc GetVirtualDurableNonce(GetVirtualDurableNonceRequest) returns (GetVirtualDurableNonceResponse);
-
-    // GetVirtualRelayAccount gets a virtual relay account for a given address
-    rpc GetVirtualRelayAccount(GetVirtualRelayAccountRequest) returns (GetVirtualRelayAccountResponse);
 }
 
 message GetVirtualTimelockAccountsRequest {
@@ -48,20 +45,4 @@ message GetVirtualDurableNonceResponse {
     }
 
     VirtualDurableNonceWithStorageMetadata item = 2;
-}
-
-message GetVirtualRelayAccountRequest {
-    Address vm_account = 1 [(validate.rules).message.required = true];
-
-    Address address = 2 [(validate.rules).message.required = true];
-}
-
-message GetVirtualRelayAccountResponse {
-    Result result = 1;
-    enum Result {
-        OK = 0;
-        NOT_FOUND = 1;
-    }
-
-    VirtualRelayAccountWithStorageMetadata item = 2;
 }
