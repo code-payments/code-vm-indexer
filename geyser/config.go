@@ -1,6 +1,8 @@
 package geyser
 
 import (
+	"context"
+	"strings"
 	"time"
 
 	"github.com/code-payments/code-server/pkg/config"
@@ -22,8 +24,8 @@ const (
 	ProgramUpdateQueueSizeConfigEnvName = envConfigPrefix + "PROGRAM_UPDATE_QUEUE_SIZE"
 	defaultProgramUpdateQueueSize       = 1_000_000
 
-	VmAccountConfigEnvName = envConfigPrefix + "VM_ACCOUNT"
-	defaultVmAccount       = ""
+	VmAccountsConfigEnvName = envConfigPrefix + "VM_ACCOUNTS"
+	defaultVmAccounts       = ""
 
 	MemoryAccountBackupWorkerIntervalConfigEnvName = envConfigPrefix + "MEMORY_ACCOUNT_BACKUP_WORKER_INTERVAL"
 	defaultMemoryAccountBackupWorkerInterval       = time.Minute
@@ -36,7 +38,7 @@ type conf struct {
 	programUpdateWorkerCount config.Uint64
 	programUpdateQueueSize   config.Uint64
 
-	vmAccount config.String
+	vmAccounts config.String
 
 	memoryAccountBackkupWorkerInterval config.Duration
 }
@@ -54,9 +56,17 @@ func WithEnvConfigs() ConfigProvider {
 			programUpdateWorkerCount: env.NewUint64Config(ProgramUpdateWorkerCountConfigEnvName, defaultProgramUpdateWorkerCount),
 			programUpdateQueueSize:   env.NewUint64Config(ProgramUpdateQueueSizeConfigEnvName, defaultProgramUpdateQueueSize),
 
-			vmAccount: env.NewStringConfig(VmAccountConfigEnvName, defaultVmAccount),
+			vmAccounts: env.NewStringConfig(VmAccountsConfigEnvName, defaultVmAccounts),
 
 			memoryAccountBackkupWorkerInterval: env.NewDurationConfig(MemoryAccountBackupWorkerIntervalConfigEnvName, defaultMemoryAccountBackupWorkerInterval),
 		}
 	}
+}
+
+func parseVmAccountsConfig(ctx context.Context, c *conf) []string {
+	parts := strings.Split(c.vmAccounts.Get(ctx), ",")
+	for i, part := range parts {
+		parts[i] = strings.TrimSpace(part)
+	}
+	return parts
 }

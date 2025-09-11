@@ -32,7 +32,7 @@ func initializeProgramAccountUpdateHandlers(conf *conf, solanaClient solana.Clie
 			solanaClient,
 			ramStore,
 			conf.memoryAccountBackkupWorkerInterval.Get(ctx),
-			conf.vmAccount.Get(ctx),
+			parseVmAccountsConfig(ctx, conf)...,
 		),
 	}
 }
