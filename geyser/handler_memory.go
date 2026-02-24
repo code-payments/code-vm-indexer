@@ -39,8 +39,9 @@ type MemoryAccountWithDataUpdateHandler struct {
 
 	ramStore ram.Store
 
-	cachedMemoryAccountStateMu sync.RWMutex
-	cachedMemoryAccountState   map[string]map[int]*cachedVirtualAccount
+	cachedMemoryAccountStateMu    sync.Mutex
+	cachedMemoryAccountStateLocks map[string]*sync.Mutex
+	cachedMemoryAccountState      map[string]map[int]*cachedVirtualAccount
 
 	lastSuccessfulSlotUpdateMu sync.RWMutex
 	lastSuccessfulSlotUpdate   map[string]uint64
@@ -58,7 +59,8 @@ func NewMemoryAccountWithDataUpdateHandler(log *zap.Logger, solanaClient solana.
 		log:                      log,
 		solanaClient:             solanaClient,
 		ramStore:                 ramStore,
-		cachedMemoryAccountState: make(map[string]map[int]*cachedVirtualAccount),
+		cachedMemoryAccountStateLocks: make(map[string]*sync.Mutex),
+		cachedMemoryAccountState:      make(map[string]map[int]*cachedVirtualAccount),
 		lastSuccessfulSlotUpdate: make(map[string]uint64),
 		highestQueuedSlotUpdate:  make(map[string]uint64),
 		backupWorkerInterval:     backupWorkerInterval,
@@ -182,7 +184,15 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 	h.highestQueuedSlotUpdateMu.Unlock()
 
 	h.cachedMemoryAccountStateMu.Lock()
-	defer h.cachedMemoryAccountStateMu.Unlock()
+	addrMu, ok := h.cachedMemoryAccountStateLocks[base58MemoryAccountAddress]
+	if !ok {
+		addrMu = &sync.Mutex{}
+		h.cachedMemoryAccountStateLocks[base58MemoryAccountAddress] = addrMu
+	}
+	h.cachedMemoryAccountStateMu.Unlock()
+
+	addrMu.Lock()
+	defer addrMu.Unlock()
 
 	// Check (again after acquiring cached memory state mutex) if the state
 	// is stale relative to the last successful update
@@ -204,8 +214,13 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 	}
 	h.highestQueuedSlotUpdateMu.RUnlock()
 
-	cachedState, ok := h.cachedMemoryAccountState[base58MemoryAccountAddress]
-	if !ok {
+	// Safe to read the outer map now that we hold addrMu — no other
+	// goroutine for this address can be writing concurrently.
+	h.cachedMemoryAccountStateMu.Lock()
+	cachedState, hasCachedState := h.cachedMemoryAccountState[base58MemoryAccountAddress]
+	h.cachedMemoryAccountStateMu.Unlock()
+
+	if !hasCachedState {
 		// Load entire memory account state from the DB into the cache
 		cachedState = make(map[int]*cachedVirtualAccount)
 
@@ -234,7 +249,9 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 			return err
 		}
 
+		h.cachedMemoryAccountStateMu.Lock()
 		h.cachedMemoryAccountState[base58MemoryAccountAddress] = cachedState
+		h.cachedMemoryAccountStateMu.Unlock()
 	}
 
 	// Track delta changes to the memory account state to be persisted into the DB
