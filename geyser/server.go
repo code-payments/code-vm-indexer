@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/code-payments/code-server/pkg/solana"
+	"github.com/code-payments/ocp-server/solana"
 	"github.com/sirupsen/logrus"
 
 	"github.com/code-payments/code-vm-indexer/data/ram"

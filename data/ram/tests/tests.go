@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/code-payments/code-vm-indexer/data/ram"
 )
 
@@ -29,12 +29,12 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 	t.Run("testRoundTrip", func(t *testing.T) {
 		ctx := context.Background()
 
-		vm := "vm"
+		vmAddr := "vm"
 		memoryAccount := "memory_account"
 		address := "address"
-		accountType := cvm.VirtualAccountTypeTimelock
+		accountType := vm.VirtualAccountTypeTimelock
 
-		_, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vm, address, accountType)
+		_, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
 		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		_, err = s.GetAllByMemoryAccount(ctx, memoryAccount)
@@ -43,7 +43,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		start := time.Now()
 
 		expected := &ram.Record{
-			Vm: vm,
+			Vm: vmAddr,
 
 			MemoryAccount: memoryAccount,
 			Index:         12345,
@@ -62,7 +62,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		assert.EqualValues(t, 1, expected.Id)
 		assert.True(t, expected.LastUpdatedAt.After(start))
 
-		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vm, address, accountType)
+		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
 		require.NoError(t, err)
 		require.Len(t, actual, 1)
 		assertEquivalentRecords(t, &cloned, actual[0])
@@ -78,7 +78,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		expected.Data = nil
 		assert.Equal(t, ram.ErrStaleState, s.Save(ctx, expected))
 
-		actual, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vm, address, accountType)
+		actual, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
 		require.NoError(t, err)
 		require.Len(t, actual, 1)
 		assertEquivalentRecords(t, &cloned, actual[0])
@@ -92,7 +92,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		cloned = expected.Clone()
 		require.NoError(t, s.Save(ctx, expected))
 
-		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vm, address, accountType)
+		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
 		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		actual, err = s.GetAllByMemoryAccount(ctx, memoryAccount)
@@ -147,7 +147,7 @@ func testGetAllByMemoryAccount(t *testing.T, s ram.Store) {
 			}
 			if i%2 == 0 {
 				address := fmt.Sprintf("address%d", i)
-				accountType := cvm.VirtualAccountTypeTimelock
+				accountType := vm.VirtualAccountTypeTimelock
 				record.IsAllocated = true
 				record.Address = &address
 				record.Type = &accountType
@@ -173,14 +173,14 @@ func testGetAllVirtualAccountsByAddressAndType(t *testing.T, s ram.Store) {
 	t.Run("testGetAllVirtualAccountsByAddressAndType", func(t *testing.T) {
 		ctx := context.Background()
 
-		vm := "vm"
+		vmAddr := "vm"
 		addressToQuery := "address0"
 
 		var expected []*ram.Record
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 2; i++ {
 			for j := 0; j < 3; j++ {
 				address := fmt.Sprintf("address%d", i)
-				accountType := cvm.VirtualAccountType(i)
+				accountType := vm.VirtualAccountType(i)
 				record := &ram.Record{
 					Vm: "vm",
 
@@ -204,14 +204,14 @@ func testGetAllVirtualAccountsByAddressAndType(t *testing.T, s ram.Store) {
 			}
 		}
 
-		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vm, addressToQuery, cvm.VirtualAccountTypeDurableNonce)
+		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, addressToQuery, vm.VirtualAccountTypeDurableNonce)
 		require.NoError(t, err)
 		require.Len(t, actual, len(expected))
 		for i, record := range actual {
 			assertEquivalentRecords(t, record, expected[i])
 		}
 
-		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vm+"-other", addressToQuery, cvm.VirtualAccountTypeDurableNonce)
+		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr+"-other", addressToQuery, vm.VirtualAccountTypeDurableNonce)
 		assert.Equal(t, ram.ErrItemNotFound, err)
 	})
 }

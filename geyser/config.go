@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/code-payments/code-server/pkg/config"
-	"github.com/code-payments/code-server/pkg/config/env"
+	"github.com/code-payments/ocp-server/config"
+	"github.com/code-payments/ocp-server/config/env"
 )
 
 const (

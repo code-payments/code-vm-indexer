@@ -6,10 +6,11 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/code-payments/code-server/pkg/code/common"
-	"github.com/code-payments/code-server/pkg/solana/cvm"
-	"github.com/code-payments/code-server/pkg/testutil"
+	"github.com/code-payments/ocp-server/ocp/common"
+	"github.com/code-payments/ocp-server/solana/vm"
+	"github.com/code-payments/ocp-server/testutil"
 	"github.com/mr-tron/base58"
+	"go.uber.org/zap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -35,7 +36,7 @@ func TestGetVirtualDurableNonce_HappyPath_Memory(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, indexerpb.GetVirtualDurableNonceResponse_NOT_FOUND, resp.Result)
 
-	ramRecord := env.saveVirtualAccountToRamDb(t, vmAccount, cvm.VirtualAccountTypeDurableNonce, base58.Encode(vdn.Address), vdn.Marshal())
+	ramRecord := env.saveVirtualAccountToRamDb(t, vmAccount, vm.VirtualAccountTypeDurableNonce, base58.Encode(vdn.Address), vdn.Marshal())
 
 	resp, err = env.client.GetVirtualDurableNonce(env.ctx, &indexerpb.GetVirtualDurableNonceRequest{
 		VmAccount: &indexerpb.Address{Value: vmAccount.PublicKey().ToBytes()},
@@ -70,13 +71,13 @@ func TestGetVirtualTimelockAccounts_HappyPath_Memory(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, indexerpb.GetVirtualTimelockAccountsResponse_NOT_FOUND, resp.Result)
 
-	var vtas []*cvm.VirtualTimelockAccount
+	var vtas []*vm.VirtualTimelockAccount
 	var ramRecords []*ram.Record
 	for i := 0; i < 3; i++ {
 		vta := generateVirtualTimelockAccount(ownerAccount.PublicKey().ToBytes())
 		vtas = append(vtas, vta)
 
-		ramRecord := env.saveVirtualAccountToRamDb(t, vmAccount, cvm.VirtualAccountTypeTimelock, base58.Encode(vta.Owner), vta.Marshal())
+		ramRecord := env.saveVirtualAccountToRamDb(t, vmAccount, vm.VirtualAccountTypeTimelock, base58.Encode(vta.Owner), vta.Marshal())
 		ramRecords = append(ramRecords, ramRecord)
 	}
 
@@ -120,7 +121,7 @@ type testEnv struct {
 func setup(t *testing.T) (env *testEnv, cleanup func()) {
 	ctx := context.Background()
 
-	conn, serv, err := testutil.NewServer()
+	conn, serv, err := testutil.NewServer(zap.NewNop())
 	require.NoError(t, err)
 
 	env = &testEnv{
@@ -141,7 +142,7 @@ func setup(t *testing.T) (env *testEnv, cleanup func()) {
 func (e *testEnv) saveVirtualAccountToRamDb(
 	t *testing.T,
 	vm *common.Account,
-	accountType cvm.VirtualAccountType,
+	accountType vm.VirtualAccountType,
 	address string,
 	data []byte,
 ) *ram.Record {
@@ -164,25 +165,25 @@ func (e *testEnv) saveVirtualAccountToRamDb(
 	return record
 }
 
-func generateVirtualDurableNonce() *cvm.VirtualDurableNonce {
+func generateVirtualDurableNonce() *vm.VirtualDurableNonce {
 	var address [32]byte
 	var value [32]byte
 
 	rand.Read(address[:])
 	rand.Read(value[:])
 
-	return &cvm.VirtualDurableNonce{
+	return &vm.VirtualDurableNonce{
 		Address: address[:],
 		Value:   value,
 	}
 }
 
-func generateVirtualTimelockAccount(owner ed25519.PublicKey) *cvm.VirtualTimelockAccount {
+func generateVirtualTimelockAccount(owner ed25519.PublicKey) *vm.VirtualTimelockAccount {
 	var nonce [32]byte
 
 	rand.Read(nonce[:])
 
-	return &cvm.VirtualTimelockAccount{
+	return &vm.VirtualTimelockAccount{
 		Owner: owner[:],
 		Nonce: nonce,
 
@@ -195,15 +196,3 @@ func generateVirtualTimelockAccount(owner ed25519.PublicKey) *cvm.VirtualTimeloc
 	}
 }
 
-func generateVirtualRelayAccount() *cvm.VirtualRelayAccount {
-	var address [32]byte
-	var destination [32]byte
-
-	rand.Read(address[:])
-	rand.Read(destination[:])
-
-	return &cvm.VirtualRelayAccount{
-		Target:      address[:],
-		Destination: destination[:],
-	}
-}

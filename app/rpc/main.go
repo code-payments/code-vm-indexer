@@ -3,9 +3,10 @@ package main
 import (
 	"sync"
 
-	grpcapp "github.com/code-payments/code-server/pkg/grpc/app"
-	"github.com/newrelic/go-agent/v3/newrelic"
+	grpcapp "github.com/code-payments/ocp-server/grpc/app"
+	"github.com/code-payments/ocp-server/metrics"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	indexerpb "github.com/code-payments/code-vm-indexer/generated/indexer/v1"
@@ -24,7 +25,7 @@ type app struct {
 // Init implements grpcapp.App.Init
 //
 // todo: Cleanup gRPC app package (ie. no hardcoded metrics provider)
-func (a *app) Init(_ grpcapp.Config, metricsProvider *newrelic.Application) error {
+func (a *app) Init(_ *zap.Logger, _ metrics.Provider, _ grpcapp.Config) error {
 	a.shutdownCh = make(chan struct{})
 
 	dataProvider, err := indexerapp.NewDataProvider()

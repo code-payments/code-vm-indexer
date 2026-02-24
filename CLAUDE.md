@@ -53,5 +53,5 @@ Core processing logic is in `geyser/handler_memory.go`. The worker:
 
 ### Key Dependencies
 
-- `github.com/code-payments/code-server` — Solana/CVM utilities, gRPC infrastructure, retry logic
+- `github.com/code-payments/ocp-server` — Solana/CVM utilities, gRPC infrastructure, retry logic
 - Go 1.26

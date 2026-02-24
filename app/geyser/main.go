@@ -4,11 +4,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/code-payments/code-server/pkg/config/env"
-	grpcapp "github.com/code-payments/code-server/pkg/grpc/app"
-	"github.com/code-payments/code-server/pkg/solana"
-	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/code-payments/ocp-server/config/env"
+	grpcapp "github.com/code-payments/ocp-server/grpc/app"
+	"github.com/code-payments/ocp-server/metrics"
+	"github.com/code-payments/ocp-server/solana"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	indexerapp "github.com/code-payments/code-vm-indexer/app"
@@ -31,7 +32,7 @@ type app struct {
 // Init implements grpcapp.App.Init
 //
 // todo: Cleanup gRPC app package (ie. no hardcoded metrics provider)
-func (a *app) Init(_ grpcapp.Config, metricsProvider *newrelic.Application) error {
+func (a *app) Init(_ *zap.Logger, _ metrics.Provider, _ grpcapp.Config) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.workerCancelFunc = cancel
 	a.shutdownCh = make(chan struct{})

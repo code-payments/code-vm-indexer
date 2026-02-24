@@ -3,7 +3,7 @@ package rpc
 import (
 	"context"
 
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/mr-tron/base58"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -43,7 +43,7 @@ func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.
 		ctx,
 		base58.Encode(req.VmAccount.Value),
 		base58.Encode(req.Owner.Value),
-		cvm.VirtualAccountTypeTimelock,
+		vm.VirtualAccountTypeTimelock,
 	)
 	if err == ram.ErrItemNotFound {
 		return &indexerpb.GetVirtualTimelockAccountsResponse{
@@ -109,7 +109,7 @@ func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetV
 		ctx,
 		base58.Encode(req.VmAccount.Value),
 		base58.Encode(req.Address.Value),
-		cvm.VirtualAccountTypeDurableNonce,
+		vm.VirtualAccountTypeDurableNonce,
 	)
 	if err == ram.ErrItemNotFound {
 		return &indexerpb.GetVirtualDurableNonceResponse{

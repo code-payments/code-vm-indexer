@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/code-payments/code-server/pkg/retry"
-	"github.com/code-payments/code-server/pkg/solana"
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/retry"
+	"github.com/code-payments/ocp-server/solana"
+	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/mr-tron/base58"
 	"github.com/sirupsen/logrus"
 
@@ -25,7 +25,7 @@ const (
 type cachedVirtualAccount struct {
 	IsInitialized  bool
 	Index          int
-	Type           cvm.VirtualAccountType
+	Type           vm.VirtualAccountType
 	Address        string
 	State          []byte
 	Slot           uint64
@@ -90,7 +90,7 @@ func (h *MemoryAccountWithDataUpdateHandler) Handle(ctx context.Context, update 
 		return err
 	}
 
-	var state cvm.MemoryAccountWithData
+	var state vm.MemoryAccountWithData
 	if err := state.Unmarshal(finalizedData); err != nil {
 		return nil
 	}
@@ -141,7 +141,7 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 					continue
 				}
 
-				var state cvm.MemoryAccountWithData
+				var state vm.MemoryAccountWithData
 				if err := state.Unmarshal(data); err != nil {
 					log.WithError(err).Warn("invalid account data state")
 					continue
@@ -158,7 +158,7 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 	}
 }
 
-func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context, address ed25519.PublicKey, observedAtSlot uint64, state *cvm.MemoryAccountWithData) error {
+func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context, address ed25519.PublicKey, observedAtSlot uint64, state *vm.MemoryAccountWithData) error {
 	log := h.log.WithField("method", "onStateObserved")
 
 	base58VmAddress := base58.Encode(state.Vm)
@@ -269,34 +269,27 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 
 		var base58VirtualAccountAddress string
 		var newVirtualAccountState []byte
-		var virtualAccountType cvm.VirtualAccountType
+		var virtualAccountType vm.VirtualAccountType
 		if isInitialized {
 			newVirtualAccountState, _ = state.Data.Read(index)
-			virtualAccountType = cvm.VirtualAccountType(newVirtualAccountState[0])
+			virtualAccountType = vm.VirtualAccountType(newVirtualAccountState[0])
 			newVirtualAccountState = newVirtualAccountState[1:]
 
 			switch virtualAccountType {
-			case cvm.VirtualAccountTypeDurableNonce:
-				var virtualAccountState cvm.VirtualDurableNonce
+			case vm.VirtualAccountTypeDurableNonce:
+				var virtualAccountState vm.VirtualDurableNonce
 				if err := virtualAccountState.UnmarshalDirectly(newVirtualAccountState); err != nil {
 					log.WithError(err).Warn("failure unmarshalling virtual durable nonce")
 					return err
 				}
 				base58VirtualAccountAddress = base58.Encode(virtualAccountState.Address)
-			case cvm.VirtualAccountTypeTimelock:
-				var virtualAccountState cvm.VirtualTimelockAccount
+			case vm.VirtualAccountTypeTimelock:
+				var virtualAccountState vm.VirtualTimelockAccount
 				if err := virtualAccountState.UnmarshalDirectly(newVirtualAccountState); err != nil {
 					log.WithError(err).Warn("failure unmarshalling virtual timelock account")
 					return err
 				}
 				base58VirtualAccountAddress = base58.Encode(virtualAccountState.Owner)
-			case cvm.VirtualAccountTypeRelay:
-				var virtualAccountState cvm.VirtualRelayAccount
-				if err := virtualAccountState.UnmarshalDirectly(newVirtualAccountState); err != nil {
-					log.WithError(err).Warn("failure unmarshalling virtual relay account")
-					return err
-				}
-				base58VirtualAccountAddress = base58.Encode(virtualAccountState.Target)
 			default:
 				// Changelog item, which isn't being tracked in the virtual accounts DB,
 				// so treat it as an unititialized memory item

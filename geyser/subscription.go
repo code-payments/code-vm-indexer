@@ -12,7 +12,7 @@ import (
 
 	geyserpb "github.com/code-payments/code-vm-indexer/generated/geyser/v1"
 
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/solana/vm"
 )
 
 const (
@@ -82,7 +82,7 @@ func (w *Worker) subscribeToProgramUpdatesFromGeyser(ctx context.Context, endpoi
 		Accounts: make(map[string]*geyserpb.SubscribeRequestFilterAccounts),
 	}
 	req.Accounts["accounts_subscription"] = &geyserpb.SubscribeRequestFilterAccounts{
-		Owner: []string{base58.Encode(cvm.PROGRAM_ID)},
+		Owner: []string{base58.Encode(vm.PROGRAM_ID)},
 	}
 	finalizedCommitmentLevel := geyserpb.CommitmentLevel_FINALIZED
 	req.Commitment = &finalizedCommitmentLevel

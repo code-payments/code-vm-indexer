@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/solana/vm"
 
 	"github.com/code-payments/code-vm-indexer/data/ram"
 )
@@ -92,7 +92,7 @@ func (s *store) GetAllByMemoryAccount(_ context.Context, memoryAccount string) (
 }
 
 // GetAllVirtualAccountsByAddressAndType implements ram.Store.GetAllVirtualAccountsByAddressAndType
-func (s *store) GetAllVirtualAccountsByAddressAndType(_ context.Context, vm, address string, accountType cvm.VirtualAccountType) ([]*ram.Record, error) {
+func (s *store) GetAllVirtualAccountsByAddressAndType(_ context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*ram.Record, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -136,7 +136,7 @@ func (s *store) findByVm(vm string) []*ram.Record {
 	return res
 }
 
-func (s *store) findByVmAddressAndAccountType(vm, address string, accountType cvm.VirtualAccountType) []*ram.Record {
+func (s *store) findByVmAddressAndAccountType(vm, address string, accountType vm.VirtualAccountType) []*ram.Record {
 	var res []*ram.Record
 	for _, item := range s.records {
 		if !item.IsAllocated {

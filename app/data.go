@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/code-payments/code-server/pkg/config/env"
-	pg "github.com/code-payments/code-server/pkg/database/postgres"
+	"github.com/code-payments/ocp-server/config/env"
+	pg "github.com/code-payments/ocp-server/database/postgres"
 	"github.com/pkg/errors"
 
 	"github.com/code-payments/code-vm-indexer/data/ram"

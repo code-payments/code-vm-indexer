@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	postgrestest "github.com/code-payments/code-server/pkg/database/postgres/test"
+	postgrestest "github.com/code-payments/ocp-server/database/postgres/test"
 	"github.com/ory/dockertest/v3"
 	"github.com/sirupsen/logrus"
 

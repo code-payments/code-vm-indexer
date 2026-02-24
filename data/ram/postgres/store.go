@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/code-payments/code-vm-indexer/data/ram"
@@ -60,7 +60,7 @@ func (s *store) GetAllByMemoryAccount(ctx context.Context, memoryAccount string)
 }
 
 // GetAllVirtualAccountsByAddressAndType implements ram.Store.GetAllVirtualAccountsByAddressAndType
-func (s *store) GetAllVirtualAccountsByAddressAndType(ctx context.Context, vm, address string, accountType cvm.VirtualAccountType) ([]*ram.Record, error) {
+func (s *store) GetAllVirtualAccountsByAddressAndType(ctx context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*ram.Record, error) {
 	models, err := dbGetAllVirtualAccountsByAddressAndType(ctx, s.tableName, s.db, vm, address, accountType)
 	if err != nil {
 		return nil, err

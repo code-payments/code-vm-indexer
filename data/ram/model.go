@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/solana/vm"
 )
 
 type Record struct {
@@ -17,7 +17,7 @@ type Record struct {
 	IsAllocated   bool
 
 	Address *string
-	Type    *cvm.VirtualAccountType
+	Type    *vm.VirtualAccountType
 	Data    []byte
 
 	Slot uint64
@@ -43,7 +43,7 @@ func (r *Record) Validate() error {
 			return errors.New("memory item type is required for allocated memory")
 		}
 		switch *r.Type {
-		case cvm.VirtualAccountTypeDurableNonce, cvm.VirtualAccountTypeTimelock, cvm.VirtualAccountTypeRelay:
+		case vm.VirtualAccountTypeDurableNonce, vm.VirtualAccountTypeTimelock:
 		default:
 			return errors.New("invalid memory item type")
 		}
@@ -110,12 +110,12 @@ func (r *Record) CopyTo(dst *Record) {
 	dst.LastUpdatedAt = r.LastUpdatedAt
 }
 
-func (r *Record) ToVirtualDurableNonce() (*cvm.VirtualDurableNonce, bool) {
-	if !r.IsAllocated || *r.Type != cvm.VirtualAccountTypeDurableNonce {
+func (r *Record) ToVirtualDurableNonce() (*vm.VirtualDurableNonce, bool) {
+	if !r.IsAllocated || *r.Type != vm.VirtualAccountTypeDurableNonce {
 		return nil, false
 	}
 
-	var vdn cvm.VirtualDurableNonce
+	var vdn vm.VirtualDurableNonce
 	err := vdn.UnmarshalDirectly(r.Data)
 	if err != nil {
 		return nil, false
@@ -123,12 +123,12 @@ func (r *Record) ToVirtualDurableNonce() (*cvm.VirtualDurableNonce, bool) {
 	return &vdn, true
 }
 
-func (r *Record) ToVirtualTimelockAccount() (*cvm.VirtualTimelockAccount, bool) {
-	if !r.IsAllocated || *r.Type != cvm.VirtualAccountTypeTimelock {
+func (r *Record) ToVirtualTimelockAccount() (*vm.VirtualTimelockAccount, bool) {
+	if !r.IsAllocated || *r.Type != vm.VirtualAccountTypeTimelock {
 		return nil, false
 	}
 
-	var vta cvm.VirtualTimelockAccount
+	var vta vm.VirtualTimelockAccount
 	err := vta.UnmarshalDirectly(r.Data)
 	if err != nil {
 		return nil, false
@@ -136,15 +136,3 @@ func (r *Record) ToVirtualTimelockAccount() (*cvm.VirtualTimelockAccount, bool) 
 	return &vta, true
 }
 
-func (r *Record) ToVirtualRelayAccount() (*cvm.VirtualRelayAccount, bool) {
-	if !r.IsAllocated || *r.Type != cvm.VirtualAccountTypeRelay {
-		return nil, false
-	}
-
-	var vra cvm.VirtualRelayAccount
-	err := vra.UnmarshalDirectly(r.Data)
-	if err != nil {
-		return nil, false
-	}
-	return &vra, true
-}

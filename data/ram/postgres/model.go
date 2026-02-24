@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	pgutil "github.com/code-payments/code-server/pkg/database/postgres"
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	pgutil "github.com/code-payments/ocp-server/database/postgres"
+	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/code-payments/code-vm-indexer/data/ram"
@@ -70,9 +70,9 @@ func fromModel(obj *model) *ram.Record {
 		address = &obj.Address.String
 	}
 
-	var itemType *cvm.VirtualAccountType
+	var itemType *vm.VirtualAccountType
 	if obj.Type.Valid {
-		casted := cvm.VirtualAccountType(obj.Type.Int16)
+		casted := vm.VirtualAccountType(obj.Type.Int16)
 		itemType = &casted
 	}
 
@@ -173,7 +173,7 @@ func dbGetAllByMemoryAccount(ctx context.Context, tableName string, db *sqlx.DB,
 	return res, nil
 }
 
-func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName string, db *sqlx.DB, vm, address string, accountType cvm.VirtualAccountType) ([]*model, error) {
+func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName string, db *sqlx.DB, vm, address string, accountType vm.VirtualAccountType) ([]*model, error) {
 	res := []*model{}
 
 	query := `SELECT id, vm, memory_account, index, is_allocated, address, item_type, data, slot, last_updated_at FROM ` + tableName + `

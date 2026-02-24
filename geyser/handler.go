@@ -3,8 +3,8 @@ package geyser
 import (
 	"context"
 
-	"github.com/code-payments/code-server/pkg/solana"
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/solana"
+	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/mr-tron/base58"
 
 	geyserpb "github.com/code-payments/code-vm-indexer/generated/geyser/v1"
@@ -28,7 +28,7 @@ type ProgramAccountUpdateHandler interface {
 func initializeProgramAccountUpdateHandlers(conf *conf, solanaClient solana.Client, ramStore ram.Store) map[string]ProgramAccountUpdateHandler {
 	ctx := context.TODO()
 	return map[string]ProgramAccountUpdateHandler{
-		base58.Encode(cvm.PROGRAM_ADDRESS): NewMemoryAccountWithDataUpdateHandler(
+		base58.Encode(vm.PROGRAM_ADDRESS): NewMemoryAccountWithDataUpdateHandler(
 			solanaClient,
 			ramStore,
 			conf.memoryAccountBackkupWorkerInterval.Get(ctx),

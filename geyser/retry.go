@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/code-payments/code-server/pkg/retry"
-	"github.com/code-payments/code-server/pkg/retry/backoff"
+	"github.com/code-payments/ocp-server/retry"
+	"github.com/code-payments/ocp-server/retry/backoff"
 )
 
 var waitForFinalizationRetryStrategies = []retry.Strategy{

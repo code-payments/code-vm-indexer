@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/code-payments/code-server/pkg/solana/cvm"
+	"github.com/code-payments/ocp-server/solana/vm"
 )
 
 var (
@@ -25,5 +25,5 @@ type Store interface {
 
 	// GetAllVirtualAccountsByAddressAndType gets all database records for
 	// allocated memory with the provided address and account type in a VM
-	GetAllVirtualAccountsByAddressAndType(ctx context.Context, vm, address string, accountType cvm.VirtualAccountType) ([]*Record, error)
+	GetAllVirtualAccountsByAddressAndType(ctx context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*Record, error)
 }
