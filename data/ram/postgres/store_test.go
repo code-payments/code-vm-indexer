@@ -37,6 +37,7 @@ const (
 		data BYTEA NULL,
 
 		slot BIGINT NOT NULL,
+		is_slot_advanced BOOL NOT NULL DEFAULT FALSE,
 
 		last_updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 

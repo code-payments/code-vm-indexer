@@ -42,6 +42,7 @@ func (s *store) Save(_ context.Context, data *ram.Record) error {
 		item.Type = data.Type
 		item.Data = data.Data
 		item.Slot = data.Slot
+		item.IsSlotAdvanced = data.IsSlotAdvanced
 		item.LastUpdatedAt = time.Now()
 
 		item.CopyTo(data)

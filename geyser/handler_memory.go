@@ -204,9 +204,10 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 		case nil:
 			for _, record := range records {
 				cachedVirtualAccountState := &cachedVirtualAccount{
-					IsInitialized: record.IsAllocated,
-					Index:         int(record.Index),
-					Slot:          record.Slot,
+					IsInitialized:  record.IsAllocated,
+					Index:          int(record.Index),
+					Slot:           record.Slot,
+					IsSlotAdvanced: record.IsSlotAdvanced,
 				}
 
 				if cachedVirtualAccountState.IsInitialized {
@@ -332,7 +333,8 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 				Index:         uint16(dbUpdate.Index),
 				IsAllocated:   dbUpdate.IsInitialized,
 
-				Slot: dbUpdate.Slot,
+				Slot:           dbUpdate.Slot,
+				IsSlotAdvanced: dbUpdate.IsSlotAdvanced,
 
 				LastUpdatedAt: time.Now(),
 			}

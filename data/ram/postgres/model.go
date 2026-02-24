@@ -25,7 +25,8 @@ type model struct {
 	Type    sql.NullInt16  `db:"item_type"`
 	Data    []byte         `db:"data"`
 
-	Slot uint64 `db:"slot"`
+	Slot           uint64 `db:"slot"`
+	IsSlotAdvanced bool   `db:"is_slot_advanced"`
 
 	LastUpdatedAt time.Time `db:"last_updated_at"`
 }
@@ -58,7 +59,8 @@ func toModel(obj *ram.Record) (*model, error) {
 		Data:    obj.Data,
 		Type:    itemType,
 
-		Slot: obj.Slot,
+		Slot:           obj.Slot,
+		IsSlotAdvanced: obj.IsSlotAdvanced,
 
 		LastUpdatedAt: obj.LastUpdatedAt,
 	}, nil
@@ -89,7 +91,8 @@ func fromModel(obj *model) *ram.Record {
 		Type:    itemType,
 		Data:    obj.Data,
 
-		Slot: obj.Slot,
+		Slot:           obj.Slot,
+		IsSlotAdvanced: obj.IsSlotAdvanced,
 
 		LastUpdatedAt: obj.LastUpdatedAt,
 	}
@@ -98,16 +101,16 @@ func fromModel(obj *model) *ram.Record {
 func (m *model) dbSave(ctx context.Context, tableName string, db *sqlx.DB) error {
 	err := pgutil.ExecuteInTx(ctx, db, sql.LevelDefault, func(tx *sqlx.Tx) error {
 		query := `INSERT INTO ` + tableName + `
-			(vm, memory_account, index, is_allocated, address, item_type, data, slot, last_updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			(vm, memory_account, index, is_allocated, address, item_type, data, slot, is_slot_advanced, last_updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 
 			ON CONFLICT (memory_account, index)
 			DO UPDATE
-				SET is_allocated = $4, address = $5, item_type = $6, data = $7, slot = $8, last_updated_at = $9
+				SET is_allocated = $4, address = $5, item_type = $6, data = $7, slot = $8, is_slot_advanced = $9, last_updated_at = $10
 				WHERE ` + tableName + `.memory_account = $2 AND ` + tableName + `.index = $3 AND ` + tableName + `.slot < $8
 
 			RETURNING
-				id, vm, memory_account, index, is_allocated, address, item_type, data, slot, last_updated_at`
+				id, vm, memory_account, index, is_allocated, address, item_type, data, slot, is_slot_advanced, last_updated_at`
 
 		m.LastUpdatedAt = time.Now()
 
@@ -126,6 +129,7 @@ func (m *model) dbSave(ctx context.Context, tableName string, db *sqlx.DB) error
 			m.Data,
 
 			m.Slot,
+			m.IsSlotAdvanced,
 
 			m.LastUpdatedAt.UTC(),
 		).StructScan(m)
@@ -154,7 +158,7 @@ func dbGetAllMemoryAccounts(ctx context.Context, tableName string, db *sqlx.DB) 
 func dbGetAllByMemoryAccount(ctx context.Context, tableName string, db *sqlx.DB, memoryAccount string) ([]*model, error) {
 	res := []*model{}
 
-	query := `SELECT id, vm, memory_account, index, is_allocated, address, item_type, data, slot, last_updated_at FROM ` + tableName + `
+	query := `SELECT id, vm, memory_account, index, is_allocated, address, item_type, data, slot, is_slot_advanced, last_updated_at FROM ` + tableName + `
 		WHERE memory_account = $1`
 
 	err := db.SelectContext(
@@ -174,7 +178,7 @@ func dbGetAllByMemoryAccount(ctx context.Context, tableName string, db *sqlx.DB,
 func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName string, db *sqlx.DB, vm, address string, accountType vm.VirtualAccountType) ([]*model, error) {
 	res := []*model{}
 
-	query := `SELECT id, vm, memory_account, index, is_allocated, address, item_type, data, slot, last_updated_at FROM ` + tableName + `
+	query := `SELECT id, vm, memory_account, index, is_allocated, address, item_type, data, slot, is_slot_advanced, last_updated_at FROM ` + tableName + `
 		WHERE vm = $1 AND address = $2 AND item_type = $3`
 
 	err := db.SelectContext(

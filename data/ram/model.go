@@ -20,7 +20,8 @@ type Record struct {
 	Type    *vm.VirtualAccountType
 	Data    []byte
 
-	Slot uint64
+	Slot           uint64
+	IsSlotAdvanced bool
 
 	LastUpdatedAt time.Time
 }
@@ -86,7 +87,8 @@ func (r *Record) Clone() Record {
 		Type:    r.Type,
 		Data:    r.Data,
 
-		Slot: r.Slot,
+		Slot:           r.Slot,
+		IsSlotAdvanced: r.IsSlotAdvanced,
 
 		LastUpdatedAt: r.LastUpdatedAt,
 	}
@@ -106,6 +108,7 @@ func (r *Record) CopyTo(dst *Record) {
 	dst.Data = r.Data
 
 	dst.Slot = r.Slot
+	dst.IsSlotAdvanced = r.IsSlotAdvanced
 
 	dst.LastUpdatedAt = r.LastUpdatedAt
 }

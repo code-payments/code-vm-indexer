@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/code-payments/code-vm-indexer/data/ram"
+	"github.com/code-payments/ocp-server/solana/vm"
 )
 
 func RunTests(t *testing.T, s ram.Store, teardown func()) {
@@ -53,7 +53,8 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 			Type:    &accountType,
 			Data:    []byte("data"),
 
-			Slot: 67890,
+			Slot:           67890,
+			IsSlotAdvanced: true,
 		}
 		cloned := expected.Clone()
 
@@ -76,6 +77,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		expected.Address = nil
 		expected.Type = nil
 		expected.Data = nil
+		expected.IsSlotAdvanced = false
 		assert.Equal(t, ram.ErrStaleState, s.Save(ctx, expected))
 
 		actual, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
@@ -227,4 +229,5 @@ func assertEquivalentRecords(t *testing.T, obj1, obj2 *ram.Record) {
 	assert.Equal(t, obj1.Data, obj2.Data)
 
 	assert.Equal(t, obj1.Slot, obj2.Slot)
+	assert.Equal(t, obj1.IsSlotAdvanced, obj2.IsSlotAdvanced)
 }
