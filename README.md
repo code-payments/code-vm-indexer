@@ -13,9 +13,9 @@ The Indexer Service is designed to be run independently, enabling anyone to have
 
 **Important Note**: Only memory storage is currently supported. Compressed storage support will be added at a later date.
 
-## What is Code?
+## What is Flipcash?
 
-[Code](https://getcode.com) is a mobile wallet app leveraging self-custodial blockchain technology to provide an instant, global, and private payments experience.
+[Flipcash](https://flipcash.com) is a self-custodial mobile wallet app leveraging the Open Code Protocol to provide a seamless multi-currency payments experience.
 
 ## Quick Start
 
@@ -47,8 +47,8 @@ DATA_STORAGE_TYPE=memory GEYSER_WORKER_GRPC_PLUGIN_ENDPOINT=localhost:10000 GEYS
 
 ## Getting Help
 
-If you have any questions or need help, please reach out to us on [Discord](https://discord.gg/T8Tpj8DBFp) or [Twitter](https://twitter.com/getcode).
+If you have any questions or need help, please reach out to us on [Twitter](https://twitter.com/flipcash).
 
 ## Security and Issue Disclosures
 
-In the interest of protecting the security of our users and their funds, we ask that if you discover any security vulnerabilities please report them using this [Report a Vulnerability](https://github.com/code-wallet/code-program-library/security/advisories/new) link.
+In the interest of protecting the security of our users and their funds, we ask that if you discover any security vulnerabilities please report them using this [Report a Vulnerability](https://github.com/code-payments/code-vm-indexer/security/advisories/new) link.
