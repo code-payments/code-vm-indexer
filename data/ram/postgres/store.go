@@ -41,8 +41,8 @@ func (s *store) Save(ctx context.Context, record *ram.Record) error {
 }
 
 // GetAllMemoryAccounts implements ram.Store.GetAllMemoryAccounts
-func (s *store) GetAllMemoryAccounts(ctx context.Context, vm string) ([]string, error) {
-	return dbGetAllMemoryAccounts(ctx, s.tableName, s.db, vm)
+func (s *store) GetAllMemoryAccounts(ctx context.Context) ([]string, error) {
+	return dbGetAllMemoryAccounts(ctx, s.tableName, s.db)
 }
 
 // GetAllByMemoryAccount implements ram.Store.GetAllByMemoryAccount

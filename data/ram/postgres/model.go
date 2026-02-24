@@ -133,17 +133,15 @@ func (m *model) dbSave(ctx context.Context, tableName string, db *sqlx.DB) error
 	return pgutil.CheckNoRows(err, ram.ErrStaleState)
 }
 
-func dbGetAllMemoryAccounts(ctx context.Context, tableName string, db *sqlx.DB, vm string) ([]string, error) {
+func dbGetAllMemoryAccounts(ctx context.Context, tableName string, db *sqlx.DB) ([]string, error) {
 	res := []string{}
 
-	query := `SELECT DISTINCT(memory_account) FROM ` + tableName + `
-		WHERE vm = $1`
+	query := `SELECT DISTINCT(memory_account) FROM ` + tableName
 
 	err := db.SelectContext(
 		ctx,
 		&res,
 		query,
-		vm,
 	)
 	if err != nil {
 		return nil, pgutil.CheckNoRows(err, ram.ErrAccountNotFound)

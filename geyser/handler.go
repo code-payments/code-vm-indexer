@@ -34,7 +34,6 @@ func initializeProgramAccountUpdateHandlers(log *zap.Logger, conf *conf, solanaC
 			solanaClient,
 			ramStore,
 			conf.memoryAccountBackkupWorkerInterval.Get(ctx),
-			parseVmAccountsConfig(ctx, conf)...,
 		),
 	}
 }

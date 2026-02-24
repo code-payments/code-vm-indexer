@@ -18,7 +18,7 @@ type Store interface {
 	Save(ctx context.Context, record *Record) error
 
 	// GetAllMemoryAccounts gets all unique memory account addresses
-	GetAllMemoryAccounts(ctx context.Context, vm string) ([]string, error)
+	GetAllMemoryAccounts(ctx context.Context) ([]string, error)
 
 	// GetAllByMemoryAccount gets all database records for a given memory account
 	GetAllByMemoryAccount(ctx context.Context, memoryAccount string) ([]*Record, error)

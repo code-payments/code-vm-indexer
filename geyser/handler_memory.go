@@ -39,8 +39,6 @@ type MemoryAccountWithDataUpdateHandler struct {
 
 	ramStore ram.Store
 
-	observableVmAccounts map[string]any
-
 	cachedMemoryAccountStateMu sync.RWMutex
 	cachedMemoryAccountState   map[string]map[int]*cachedVirtualAccount
 
@@ -55,17 +53,11 @@ type MemoryAccountWithDataUpdateHandler struct {
 
 // NewMemoryAccountWithDataUpdateHandler returns a new ProgramAccountUpdateHandler
 // for observing and persisting state changes to a MemoryAccountWithData account
-func NewMemoryAccountWithDataUpdateHandler(log *zap.Logger, solanaClient solana.Client, ramStore ram.Store, backupWorkerInterval time.Duration, vmsToObserve ...string) ProgramAccountUpdateHandler {
-	observableVmAccounts := make(map[string]any)
-	for _, vm := range vmsToObserve {
-		observableVmAccounts[vm] = struct{}{}
-	}
-
+func NewMemoryAccountWithDataUpdateHandler(log *zap.Logger, solanaClient solana.Client, ramStore ram.Store, backupWorkerInterval time.Duration) ProgramAccountUpdateHandler {
 	return &MemoryAccountWithDataUpdateHandler{
 		log:                      log,
 		solanaClient:             solanaClient,
 		ramStore:                 ramStore,
-		observableVmAccounts:     observableVmAccounts,
 		cachedMemoryAccountState: make(map[string]map[int]*cachedVirtualAccount),
 		lastSuccessfulSlotUpdate: make(map[string]uint64),
 		highestQueuedSlotUpdate:  make(map[string]uint64),
@@ -108,18 +100,9 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 	for {
 		select {
 		case <-time.After(h.backupWorkerInterval):
-			var addresses []string
-			for vm := range h.observableVmAccounts {
-				log := log.With(zap.String("vm", vm))
-
-				addressesByVm, err := h.ramStore.GetAllMemoryAccounts(ctx, vm)
-				switch err {
-				case nil:
-					addresses = append(addresses, addressesByVm...)
-				case ram.ErrAccountNotFound:
-				default:
-					log.Warn("failure getting memory account addresses by vm", zap.Error(err))
-				}
+			addresses, err := h.ramStore.GetAllMemoryAccounts(ctx)
+			if err != nil && err != ram.ErrAccountNotFound {
+				log.Warn("failure getting memory account addresses", zap.Error(err))
 			}
 
 			for _, address := range addresses {
@@ -168,11 +151,6 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 		zap.String("vm", base58VmAddress),
 		zap.String("address", base58MemoryAccountAddress),
 	)
-
-	// Not a VM that is being observed
-	if _, ok := h.observableVmAccounts[base58VmAddress]; !ok {
-		return nil
-	}
 
 	// Check if the state is stale relative to the last successful update
 	h.lastSuccessfulSlotUpdateMu.RLock()

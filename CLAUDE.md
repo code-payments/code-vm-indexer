@@ -16,7 +16,7 @@ go test -run TestName ./path/to/package/...
 
 # Run locally (Docker)
 DATA_STORAGE_TYPE=memory make run-rpc
-DATA_STORAGE_TYPE=memory GEYSER_WORKER_GRPC_PLUGIN_ENDPOINT=localhost:10000 GEYSER_WORKER_VM_ACCOUNT=<VM_KEY> SOLANA_RPC_ENDPOINT=http://localhost:8899 make run-geyser
+DATA_STORAGE_TYPE=memory GEYSER_WORKER_GRPC_PLUGIN_ENDPOINT=localhost:10000 SOLANA_RPC_ENDPOINT=http://localhost:8899 make run-geyser
 ```
 
 Proto generation (`make generate`) is currently broken due to optional fields in the Geyser proto.

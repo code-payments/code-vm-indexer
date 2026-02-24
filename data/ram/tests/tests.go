@@ -106,7 +106,7 @@ func testGetAllMemoryAccounts(t *testing.T, s ram.Store) {
 	t.Run("testGetAllMemoryAccounts", func(t *testing.T) {
 		ctx := context.Background()
 
-		_, err := s.GetAllMemoryAccounts(ctx, "vm2")
+		_, err := s.GetAllMemoryAccounts(ctx)
 		assert.Equal(t, ram.ErrAccountNotFound, err)
 
 		for i := 0; i < 3; i++ {
@@ -121,10 +121,9 @@ func testGetAllMemoryAccounts(t *testing.T, s ram.Store) {
 			}))
 		}
 
-		actual, err := s.GetAllMemoryAccounts(ctx, "vm2")
+		actual, err := s.GetAllMemoryAccounts(ctx)
 		require.NoError(t, err)
-		require.Len(t, actual, 1)
-		assert.Equal(t, "memory_account_2", actual[0])
+		require.Len(t, actual, 3)
 	})
 }
 
