@@ -56,14 +56,14 @@ type MemoryAccountWithDataUpdateHandler struct {
 // for observing and persisting state changes to a MemoryAccountWithData account
 func NewMemoryAccountWithDataUpdateHandler(log *zap.Logger, solanaClient solana.Client, ramStore ram.Store, backupWorkerInterval time.Duration) ProgramAccountUpdateHandler {
 	return &MemoryAccountWithDataUpdateHandler{
-		log:                      log,
-		solanaClient:             solanaClient,
-		ramStore:                 ramStore,
+		log:                           log,
+		solanaClient:                  solanaClient,
+		ramStore:                      ramStore,
 		cachedMemoryAccountStateLocks: make(map[string]*sync.Mutex),
 		cachedMemoryAccountState:      make(map[string]map[int]*cachedVirtualAccount),
-		lastSuccessfulSlotUpdate: make(map[string]uint64),
-		highestQueuedSlotUpdate:  make(map[string]uint64),
-		backupWorkerInterval:     backupWorkerInterval,
+		lastSuccessfulSlotUpdate:      make(map[string]uint64),
+		highestQueuedSlotUpdate:       make(map[string]uint64),
+		backupWorkerInterval:          backupWorkerInterval,
 	}
 }
 
@@ -346,10 +346,9 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 
 	// Update the DB with the delta changes to the memory account state
 	var wg sync.WaitGroup
+	wg.Add(len(dbUpdates))
 	var cachedMemoryAccountStateUpdateMu sync.Mutex
-	for i, dbUpdate := range dbUpdates {
-		wg.Add(1)
-
+	for _, dbUpdate := range dbUpdates {
 		go func(dbUpdate *cachedVirtualAccount) {
 			defer wg.Done()
 
@@ -384,10 +383,6 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 				log.Warn("failure updating db record", zap.Error(err))
 			}
 		}(dbUpdate)
-
-		if i%250 == 0 {
-			time.Sleep(time.Second / 4)
-		}
 	}
 	wg.Wait()
 
