@@ -11,7 +11,7 @@ import (
 	"github.com/code-payments/ocp-server/solana"
 	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/mr-tron/base58"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	geyserpb "github.com/code-payments/code-vm-indexer/generated/geyser/v1"
 
@@ -33,7 +33,7 @@ type cachedVirtualAccount struct {
 }
 
 type MemoryAccountWithDataUpdateHandler struct {
-	log *logrus.Entry
+	log *zap.Logger
 
 	solanaClient solana.Client
 
@@ -55,14 +55,14 @@ type MemoryAccountWithDataUpdateHandler struct {
 
 // NewMemoryAccountWithDataUpdateHandler returns a new ProgramAccountUpdateHandler
 // for observing and persisting state changes to a MemoryAccountWithData account
-func NewMemoryAccountWithDataUpdateHandler(solanaClient solana.Client, ramStore ram.Store, backupWorkerInterval time.Duration, vmsToObserve ...string) ProgramAccountUpdateHandler {
+func NewMemoryAccountWithDataUpdateHandler(log *zap.Logger, solanaClient solana.Client, ramStore ram.Store, backupWorkerInterval time.Duration, vmsToObserve ...string) ProgramAccountUpdateHandler {
 	observableVmAccounts := make(map[string]any)
 	for _, vm := range vmsToObserve {
 		observableVmAccounts[vm] = struct{}{}
 	}
 
 	return &MemoryAccountWithDataUpdateHandler{
-		log:                      logrus.StandardLogger().WithField("type", "geyser/handler/memory"),
+		log:                      log,
 		solanaClient:             solanaClient,
 		ramStore:                 ramStore,
 		observableVmAccounts:     observableVmAccounts,
@@ -103,14 +103,14 @@ func (h *MemoryAccountWithDataUpdateHandler) RunBackupWorker(ctx context.Context
 }
 
 func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) error {
-	log := h.log.WithField("method", "backupWorker")
+	log := h.log.With(zap.String("method", "backupWorker"))
 
 	for {
 		select {
 		case <-time.After(h.backupWorkerInterval):
 			var addresses []string
 			for vm := range h.observableVmAccounts {
-				log := log.WithField("vm", vm)
+				log := log.With(zap.String("vm", vm))
 
 				addressesByVm, err := h.ramStore.GetAllMemoryAccounts(ctx, vm)
 				switch err {
@@ -118,16 +118,16 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 					addresses = append(addresses, addressesByVm...)
 				case ram.ErrAccountNotFound:
 				default:
-					log.WithError(err).Warn("failure getting memory account addresses by vm")
+					log.Warn("failure getting memory account addresses by vm", zap.Error(err))
 				}
 			}
 
 			for _, address := range addresses {
-				log := log.WithField("address", address)
+				log := log.With(zap.String("address", address))
 
 				decodedAddress, err := base58.Decode(address)
 				if err != nil {
-					log.WithError(err).Warn("address is invalid")
+					log.Warn("address is invalid", zap.Error(err))
 					continue
 				}
 
@@ -137,13 +137,13 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 
 				data, observedAtSlot, err := h.solanaClient.GetAccountDataAfterBlock(decodedAddress, minSlot)
 				if err != nil {
-					log.WithError(err).Warn("failure getting account data")
+					log.Warn("failure getting account data", zap.Error(err))
 					continue
 				}
 
 				var state vm.MemoryAccountWithData
 				if err := state.Unmarshal(data); err != nil {
-					log.WithError(err).Warn("invalid account data state")
+					log.Warn("invalid account data state", zap.Error(err))
 					continue
 				}
 
@@ -159,15 +159,15 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 }
 
 func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context, address ed25519.PublicKey, observedAtSlot uint64, state *vm.MemoryAccountWithData) error {
-	log := h.log.WithField("method", "onStateObserved")
+	log := h.log.With(zap.String("method", "onStateObserved"))
 
 	base58VmAddress := base58.Encode(state.Vm)
 	base58MemoryAccountAddress := base58.Encode(address)
 
-	log = log.WithFields(logrus.Fields{
-		"vm":      base58VmAddress,
-		"address": base58MemoryAccountAddress,
-	})
+	log = log.With(
+		zap.String("vm", base58VmAddress),
+		zap.String("address", base58MemoryAccountAddress),
+	)
 
 	// Not a VM that is being observed
 	if _, ok := h.observableVmAccounts[base58VmAddress]; !ok {
@@ -241,7 +241,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 			}
 		case ram.ErrItemNotFound:
 		default:
-			log.WithError(err).Warn("failure loading memory account state from db")
+			log.Warn("failure loading memory account state from db", zap.Error(err))
 			return err
 		}
 
@@ -251,7 +251,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 	// Track delta changes to the memory account state to be persisted into the DB
 	var dbUpdates []*cachedVirtualAccount
 	for index := range state.Data.State {
-		log := log.WithField("index", index)
+		log := log.With(zap.Int("index", index))
 
 		cachedVirtualAccountState, ok := cachedState[index]
 		if !ok {
@@ -279,14 +279,14 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 			case vm.VirtualAccountTypeDurableNonce:
 				var virtualAccountState vm.VirtualDurableNonce
 				if err := virtualAccountState.UnmarshalDirectly(newVirtualAccountState); err != nil {
-					log.WithError(err).Warn("failure unmarshalling virtual durable nonce")
+					log.Warn("failure unmarshalling virtual durable nonce", zap.Error(err))
 					return err
 				}
 				base58VirtualAccountAddress = base58.Encode(virtualAccountState.Address)
 			case vm.VirtualAccountTypeTimelock:
 				var virtualAccountState vm.VirtualTimelockAccount
 				if err := virtualAccountState.UnmarshalDirectly(newVirtualAccountState); err != nil {
-					log.WithError(err).Warn("failure unmarshalling virtual timelock account")
+					log.Warn("failure unmarshalling virtual timelock account", zap.Error(err))
 					return err
 				}
 				base58VirtualAccountAddress = base58.Encode(virtualAccountState.Owner)
@@ -374,7 +374,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 			case ram.ErrStaleState:
 				// Should never happen given current locking structure
 			default:
-				log.WithError(err).Warn("failure updating db record")
+				log.Warn("failure updating db record", zap.Error(err))
 			}
 		}(dbUpdate)
 

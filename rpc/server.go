@@ -5,7 +5,7 @@ import (
 
 	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/mr-tron/base58"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -15,7 +15,7 @@ import (
 )
 
 type server struct {
-	log *logrus.Entry
+	log *zap.Logger
 
 	ramStore ram.Store
 
@@ -23,9 +23,9 @@ type server struct {
 }
 
 // NewServer returns a new indexerpb.IndexerServer implementation
-func NewServer(ramStore ram.Store) indexerpb.IndexerServer {
+func NewServer(log *zap.Logger, ramStore ram.Store) indexerpb.IndexerServer {
 	return &server{
-		log: logrus.StandardLogger().WithField("type", "rpc/indexer/server"),
+		log: log,
 
 		ramStore: ramStore,
 	}
@@ -33,11 +33,11 @@ func NewServer(ramStore ram.Store) indexerpb.IndexerServer {
 
 // GetVirtualTimelockAccounts implements indexerpb.IndexerServer.GetVirtualTimelockAccounts
 func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.GetVirtualTimelockAccountsRequest) (*indexerpb.GetVirtualTimelockAccountsResponse, error) {
-	log := s.log.WithFields(logrus.Fields{
-		"method": "GetVirtualTimelockAccounts",
-		"vm":     base58.Encode(req.VmAccount.Value),
-		"owner":  base58.Encode(req.Owner.Value),
-	})
+	log := s.log.With(
+		zap.String("method", "GetVirtualTimelockAccounts"),
+		zap.String("vm", base58.Encode(req.VmAccount.Value)),
+		zap.String("owner", base58.Encode(req.Owner.Value)),
+	)
 
 	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(
 		ctx,
@@ -50,7 +50,7 @@ func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.
 			Result: indexerpb.GetVirtualTimelockAccountsResponse_NOT_FOUND,
 		}, nil
 	} else if err != nil {
-		log.WithError(err).Warn("failure querying db")
+		log.Warn("failure querying db", zap.Error(err))
 		return nil, status.Error(codes.Internal, "")
 	}
 
@@ -62,7 +62,7 @@ func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.
 	for i, record := range records {
 		decodedMemoryAccountAddress, err := base58.Decode(record.MemoryAccount)
 		if err != nil {
-			log.WithError(err).Warn("invalid memory account address")
+			log.Warn("invalid memory account address", zap.Error(err))
 			return nil, status.Error(codes.Internal, "")
 		}
 
@@ -99,11 +99,11 @@ func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.
 
 // GetVirtualDurableNonce implements indexerpb.IndexerServer.GetVirtualDurableNonce
 func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetVirtualDurableNonceRequest) (*indexerpb.GetVirtualDurableNonceResponse, error) {
-	log := s.log.WithFields(logrus.Fields{
-		"method":  "GetVirtualDurableNonce",
-		"vm":      base58.Encode(req.VmAccount.Value),
-		"address": base58.Encode(req.Address.Value),
-	})
+	log := s.log.With(
+		zap.String("method", "GetVirtualDurableNonce"),
+		zap.String("vm", base58.Encode(req.VmAccount.Value)),
+		zap.String("address", base58.Encode(req.Address.Value)),
+	)
 
 	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(
 		ctx,
@@ -116,7 +116,7 @@ func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetV
 			Result: indexerpb.GetVirtualDurableNonceResponse_NOT_FOUND,
 		}, nil
 	} else if err != nil {
-		log.WithError(err).Warn("failure querying db")
+		log.Warn("failure querying db", zap.Error(err))
 		return nil, status.Error(codes.Internal, "")
 	}
 
@@ -128,7 +128,7 @@ func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetV
 
 	decodedMemoryAccountAddress, err := base58.Decode(record.MemoryAccount)
 	if err != nil {
-		log.WithError(err).Warn("invalid memory account address")
+		log.Warn("invalid memory account address", zap.Error(err))
 		return nil, status.Error(codes.Internal, "")
 	}
 

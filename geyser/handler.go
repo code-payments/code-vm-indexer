@@ -6,6 +6,7 @@ import (
 	"github.com/code-payments/ocp-server/solana"
 	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/mr-tron/base58"
+	"go.uber.org/zap"
 
 	geyserpb "github.com/code-payments/code-vm-indexer/generated/geyser/v1"
 
@@ -25,10 +26,11 @@ type ProgramAccountUpdateHandler interface {
 	RunBackupWorker(ctx context.Context) error
 }
 
-func initializeProgramAccountUpdateHandlers(conf *conf, solanaClient solana.Client, ramStore ram.Store) map[string]ProgramAccountUpdateHandler {
+func initializeProgramAccountUpdateHandlers(log *zap.Logger, conf *conf, solanaClient solana.Client, ramStore ram.Store) map[string]ProgramAccountUpdateHandler {
 	ctx := context.TODO()
 	return map[string]ProgramAccountUpdateHandler{
 		base58.Encode(vm.PROGRAM_ADDRESS): NewMemoryAccountWithDataUpdateHandler(
+			log,
 			solanaClient,
 			ramStore,
 			conf.memoryAccountBackkupWorkerInterval.Get(ctx),

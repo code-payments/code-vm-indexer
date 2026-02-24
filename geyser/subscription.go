@@ -6,6 +6,7 @@ import (
 
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -61,7 +62,7 @@ func boundedRecv(ctx context.Context, streamer geyserpb.Geyser_SubscribeClient, 
 }
 
 func (w *Worker) subscribeToProgramUpdatesFromGeyser(ctx context.Context, endpoint, xToken string) error {
-	log := w.log.WithField("method", "subscribeToProgramUpdatesFromGeyser")
+	log := w.log.With(zap.String("method", "subscribeToProgramUpdatesFromGeyser"))
 	log.Debug("subscription started")
 
 	defer func() {

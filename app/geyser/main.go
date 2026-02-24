@@ -8,7 +8,6 @@ import (
 	grpcapp "github.com/code-payments/ocp-server/grpc/app"
 	"github.com/code-payments/ocp-server/metrics"
 	"github.com/code-payments/ocp-server/solana"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -32,7 +31,7 @@ type app struct {
 // Init implements grpcapp.App.Init
 //
 // todo: Cleanup gRPC app package (ie. no hardcoded metrics provider)
-func (a *app) Init(_ *zap.Logger, _ metrics.Provider, _ grpcapp.Config) error {
+func (a *app) Init(logger *zap.Logger, _ metrics.Provider, _ grpcapp.Config) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.workerCancelFunc = cancel
 	a.shutdownCh = make(chan struct{})
@@ -46,7 +45,7 @@ func (a *app) Init(_ *zap.Logger, _ metrics.Provider, _ grpcapp.Config) error {
 		return err
 	}
 
-	a.geyserWorker = geyser.NewWorker(ctx, solanaClient, dataProvider.Ram, geyser.WithEnvConfigs())
+	a.geyserWorker = geyser.NewWorker(ctx, logger, solanaClient, dataProvider.Ram, geyser.WithEnvConfigs())
 	go a.geyserWorker.Run(ctx)
 
 	return nil
@@ -73,6 +72,7 @@ func main() {
 	if err := grpcapp.Run(
 		&app{},
 	); err != nil {
-		logrus.WithError(err).Fatal("error running indexer geyser worker")
+		log, _ := zap.NewProduction()
+		log.Fatal("error running indexer geyser worker", zap.Error(err))
 	}
 }

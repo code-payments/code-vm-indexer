@@ -7,7 +7,7 @@ import (
 
 	postgrestest "github.com/code-payments/ocp-server/database/postgres/test"
 	"github.com/ory/dockertest/v3"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 
@@ -51,24 +51,24 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	log := logrus.StandardLogger()
+	log := zap.NewNop()
 
 	testPool, err := dockertest.NewPool("")
 	if err != nil {
-		log.WithError(err).Error("Error creating docker pool")
+		log.Error("Error creating docker pool", zap.Error(err))
 		os.Exit(1)
 	}
 
 	var cleanUpFunc func()
 	db, cleanUpFunc, err := postgrestest.StartPostgresDB(testPool)
 	if err != nil {
-		log.WithError(err).Error("Error starting postgres image")
+		log.Error("Error starting postgres image", zap.Error(err))
 		os.Exit(1)
 	}
 	defer db.Close()
 
 	if err := createTestTables(db); err != nil {
-		logrus.StandardLogger().WithError(err).Error("Error creating test tables")
+		zap.NewNop().Error("Error creating test tables", zap.Error(err))
 		cleanUpFunc()
 		os.Exit(1)
 	}
@@ -81,7 +81,7 @@ func TestMain(m *testing.M) {
 		}
 
 		if err := resetTestTables(db); err != nil {
-			logrus.StandardLogger().WithError(err).Error("Error resetting test tables")
+			zap.NewNop().Error("Error resetting test tables", zap.Error(err))
 			cleanUpFunc()
 			os.Exit(1)
 		}
@@ -99,7 +99,7 @@ func TestRamPostgresStore(t *testing.T) {
 func createTestTables(db *sql.DB) error {
 	_, err := db.Exec(tableCreate)
 	if err != nil {
-		logrus.StandardLogger().WithError(err).Error("could not create test tables")
+		zap.NewNop().Error("could not create test tables", zap.Error(err))
 		return err
 	}
 	return nil
@@ -108,7 +108,7 @@ func createTestTables(db *sql.DB) error {
 func resetTestTables(db *sql.DB) error {
 	_, err := db.Exec(tableDestroy)
 	if err != nil {
-		logrus.StandardLogger().WithError(err).Error("could not drop test tables")
+		zap.NewNop().Error("could not drop test tables", zap.Error(err))
 		return err
 	}
 

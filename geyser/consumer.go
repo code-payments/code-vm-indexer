@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/mr-tron/base58"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 func (w *Worker) consumeGeyserProgramUpdateEvents(ctx context.Context) error {
-	log := w.log.WithField("method", "consumeGeyserProgramUpdateEvents")
+	log := w.log.With(zap.String("method", "consumeGeyserProgramUpdateEvents"))
 
 	for {
 		// Is the service stopped?
@@ -22,7 +22,7 @@ func (w *Worker) consumeGeyserProgramUpdateEvents(ctx context.Context) error {
 
 		err := w.subscribeToProgramUpdatesFromGeyser(ctx, w.conf.grpcPluginEndpoint.Get(ctx), w.conf.grpcPluginXToken.Get(ctx))
 		if err != nil && !errors.Is(err, context.Canceled) {
-			log.WithError(err).Warn("program update consumer unexpectedly terminated")
+			log.Warn("program update consumer unexpectedly terminated", zap.Error(err))
 		}
 
 		// Avoid spamming new connections when something is wrong
@@ -31,10 +31,10 @@ func (w *Worker) consumeGeyserProgramUpdateEvents(ctx context.Context) error {
 }
 
 func (w *Worker) programUpdateWorker(ctx context.Context, id int) {
-	log := w.log.WithFields(logrus.Fields{
-		"method":    "programUpdateWorker",
-		"worker_id": id,
-	})
+	log := w.log.With(
+		zap.String("method", "programUpdateWorker"),
+		zap.Int("worker_id", id),
+	)
 
 	log.Debug("worker started")
 
@@ -47,13 +47,13 @@ func (w *Worker) programUpdateWorker(ctx context.Context, id int) {
 			base58PublicKey := base58.Encode(update.Account.Pubkey)
 			base58ProgramAddress := base58.Encode(update.Account.Owner)
 
-			log := log.WithFields(logrus.Fields{
-				"account": base58PublicKey,
-				"program": base58ProgramAddress,
-				"slot":    update.Slot,
-			})
+			log := log.With(
+				zap.String("account", base58PublicKey),
+				zap.String("program", base58ProgramAddress),
+				zap.Uint64("slot", update.Slot),
+			)
 			if len(update.Account.TxnSignature) > 0 {
-				log = log.WithField("transaction", base58.Encode(update.Account.TxnSignature))
+				log = log.With(zap.String("transaction", base58.Encode(update.Account.TxnSignature)))
 			}
 
 			handler, ok := w.programUpdateHandlers[base58ProgramAddress]
@@ -63,7 +63,7 @@ func (w *Worker) programUpdateWorker(ctx context.Context, id int) {
 			}
 
 			if err := handler.Handle(ctx, update); err != nil {
-				log.WithError(err).Warn("failed to process program account update")
+				log.Warn("failed to process program account update", zap.Error(err))
 			}
 		}()
 	}

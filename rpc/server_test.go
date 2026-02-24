@@ -131,7 +131,7 @@ func setup(t *testing.T) (env *testEnv, cleanup func()) {
 	}
 
 	serv.RegisterService(func(server *grpc.Server) {
-		indexerpb.RegisterIndexerServer(server, NewServer(env.ramStore))
+		indexerpb.RegisterIndexerServer(server, NewServer(zap.NewNop(), env.ramStore))
 	})
 
 	cleanup, err = serv.Serve()

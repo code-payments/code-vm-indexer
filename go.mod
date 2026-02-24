@@ -11,7 +11,6 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/ory/dockertest/v3 v3.7.0
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.27.1
 	google.golang.org/grpc v1.77.0
@@ -64,6 +63,7 @@ require (
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.3.0 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect

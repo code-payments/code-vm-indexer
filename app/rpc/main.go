@@ -5,7 +5,6 @@ import (
 
 	grpcapp "github.com/code-payments/ocp-server/grpc/app"
 	"github.com/code-payments/ocp-server/metrics"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -25,7 +24,7 @@ type app struct {
 // Init implements grpcapp.App.Init
 //
 // todo: Cleanup gRPC app package (ie. no hardcoded metrics provider)
-func (a *app) Init(_ *zap.Logger, _ metrics.Provider, _ grpcapp.Config) error {
+func (a *app) Init(logger *zap.Logger, _ metrics.Provider, _ grpcapp.Config) error {
 	a.shutdownCh = make(chan struct{})
 
 	dataProvider, err := indexerapp.NewDataProvider()
@@ -33,7 +32,7 @@ func (a *app) Init(_ *zap.Logger, _ metrics.Provider, _ grpcapp.Config) error {
 		return err
 	}
 
-	a.indexerServer = rpc.NewServer(dataProvider.Ram)
+	a.indexerServer = rpc.NewServer(logger, dataProvider.Ram)
 
 	return nil
 }
@@ -59,6 +58,7 @@ func main() {
 	if err := grpcapp.Run(
 		&app{},
 	); err != nil {
-		logrus.WithError(err).Fatal("error running indexer rpc")
+		log, _ := zap.NewProduction()
+		log.Fatal("error running indexer rpc", zap.Error(err))
 	}
 }
