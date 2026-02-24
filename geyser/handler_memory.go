@@ -97,44 +97,54 @@ func (h *MemoryAccountWithDataUpdateHandler) RunBackupWorker(ctx context.Context
 func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) error {
 	log := h.log.With(zap.String("method", "backupWorker"))
 
+	var cachedAddresses []string
 	for {
 		select {
 		case <-time.After(h.backupWorkerInterval):
 			addresses, err := h.ramStore.GetAllMemoryAccounts(ctx)
-			if err != nil && err != ram.ErrAccountNotFound {
+			if err == nil {
+				cachedAddresses = addresses
+			} else if err != ram.ErrAccountNotFound {
 				log.Warn("failure getting memory account addresses", zap.Error(err))
 			}
 
-			for _, address := range addresses {
-				log := log.With(zap.String("address", address))
+			var wg sync.WaitGroup
+			wg.Add(len(cachedAddresses))
+			for _, address := range cachedAddresses {
+				go func(address string) {
+					defer wg.Done()
 
-				decodedAddress, err := base58.Decode(address)
-				if err != nil {
-					log.Warn("address is invalid", zap.Error(err))
-					continue
-				}
+					log := log.With(zap.String("address", address))
 
-				h.lastSuccessfulSlotUpdateMu.RLock()
-				minSlot := h.lastSuccessfulSlotUpdate[address]
-				h.lastSuccessfulSlotUpdateMu.RUnlock()
+					decodedAddress, err := base58.Decode(address)
+					if err != nil {
+						log.Warn("address is invalid", zap.Error(err))
+						return
+					}
 
-				data, observedAtSlot, err := h.solanaClient.GetAccountDataAfterBlock(decodedAddress, minSlot)
-				if err != nil {
-					log.Warn("failure getting account data", zap.Error(err))
-					continue
-				}
+					h.lastSuccessfulSlotUpdateMu.RLock()
+					minSlot := h.lastSuccessfulSlotUpdate[address]
+					h.lastSuccessfulSlotUpdateMu.RUnlock()
 
-				var state vm.MemoryAccountWithData
-				if err := state.Unmarshal(data); err != nil {
-					log.Warn("invalid account data state", zap.Error(err))
-					continue
-				}
+					data, observedAtSlot, err := h.solanaClient.GetAccountDataAfterBlock(decodedAddress, minSlot)
+					if err != nil {
+						log.Warn("failure getting account data", zap.Error(err))
+						return
+					}
 
-				err = h.onStateObserved(ctx, decodedAddress, observedAtSlot, &state)
-				if err != nil {
-					continue
-				}
+					var state vm.MemoryAccountWithData
+					if err := state.Unmarshal(data); err != nil {
+						log.Warn("invalid account data state", zap.Error(err))
+						return
+					}
+
+					err = h.onStateObserved(ctx, decodedAddress, observedAtSlot, &state)
+					if err != nil {
+						return
+					}
+				}(address)
 			}
+			wg.Wait()
 		case <-ctx.Done():
 			return ctx.Err()
 		}
