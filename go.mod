@@ -1,6 +1,6 @@
 module github.com/code-payments/code-vm-indexer
 
-go 1.23.0
+go 1.26.0
 
 require (
 	github.com/code-payments/code-server v1.10.21-0.20250507142349-9c8923fb60b8
