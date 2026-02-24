@@ -283,7 +283,7 @@ func (h *MemoryAccountWithDataUpdateHandler) onStateObserved(ctx context.Context
 				cachedVirtualAccountState.Address == base58VirtualAccountAddress &&
 				bytes.Equal(cachedVirtualAccountState.State, newVirtualAccountState) {
 
-				if cachedVirtualAccountState.IsSlotAdvanced || observedAtSlot-cachedVirtualAccountState.Slot < 2*confirmationsToFinalization {
+				if cachedVirtualAccountState.IsSlotAdvanced || observedAtSlot-cachedVirtualAccountState.Slot < confirmationsToFinalization {
 					continue
 				}
 
