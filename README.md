@@ -42,7 +42,7 @@ DATA_STORAGE_TYPE=memory make run-rpc
 5. Run the Geyser worker locally:
 
 ```bash
-DATA_STORAGE_TYPE=memory GEYSER_WORKER_GRPC_PLUGIN_ENDPOINT=localhost:10000 SOLANA_RPC_ENDPOINT=http://localhost:8899 make run-geyser
+DATA_STORAGE_TYPE=memory GEYSER_WORKER_GRPC_PLUGIN_ENDPOINT=localhost:10000 SOLANA_PRIMARY_RPC_ENDPOINT=http://localhost:8899 make run-geyser
 ```
 
 ## Getting Help

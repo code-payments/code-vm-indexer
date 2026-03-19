@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	solanaRpcEndpointConfigEnvName = "SOLANA_RPC_ENDPOINT"
-	defaultSolanaRpcEndpoint       = "http://localhost:8899"
+	solanaPrimaryRpcEndpointConfigEnvName  = "SOLANA_PRIMARY_RPC_ENDPOINT"
+	solanaFallbackRpcEndpointConfigEnvName = "SOLANA_FALLBACK_RPC_ENDPOINT"
+	defaultSolanaPrimaryRpcEndpoint        = "http://localhost:8899"
+	defaultSolanaFallbackRpcEndpoint       = ""
 )
 
 type app struct {
@@ -36,9 +38,13 @@ func (a *app) Init(logger *zap.Logger, _ metrics.Provider, _ grpcapp.Config) err
 	a.workerCancelFunc = cancel
 	a.shutdownCh = make(chan struct{})
 
-	solanaRpcEndpointConfig := env.NewStringConfig(solanaRpcEndpointConfigEnvName, defaultSolanaRpcEndpoint)
+	solanaPrimaryRpcEndpointConfig := env.NewStringConfig(solanaPrimaryRpcEndpointConfigEnvName, defaultSolanaPrimaryRpcEndpoint)
+	solanaFallbackRpcEndpointConfig := env.NewStringConfig(solanaFallbackRpcEndpointConfigEnvName, defaultSolanaFallbackRpcEndpoint)
 
-	solanaClient := solana.New(solanaRpcEndpointConfig.Get(ctx))
+	solanaClient := solana.NewWithFallback(
+		solanaPrimaryRpcEndpointConfig.Get(ctx),
+		solanaFallbackRpcEndpointConfig.Get(ctx),
+	)
 
 	dataProvider, err := indexerapp.NewDataProvider()
 	if err != nil {

@@ -73,6 +73,6 @@ run-geyser: build-geyser build-geyser-image
 		-e POSTGRES_PORT=$(POSTGRES_PORT) \
 		-e POSTGRES_DB_NAME=$(POSTGRES_DB_NAME) \
 		-e RAM_TABLE_NAME=$(RAM_TABLE_NAME) \
-		-e SOLANA_RPC_ENDPOINT=$(SOLANA_RPC_ENDPOINT) \
+		-e SOLANA_PRIMARY_RPC_ENDPOINT=$(SOLANA_PRIMARY_RPC_ENDPOINT) \
 		-e LOG_LEVEL=trace \
 		code-vm-indexer-geyser-service:$(GIT_BRANCH)
