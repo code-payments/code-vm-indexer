@@ -3,16 +3,21 @@ module github.com/code-payments/code-vm-indexer
 go 1.26.0
 
 require (
+	connectrpc.com/connect v1.19.1
 	github.com/code-payments/ocp-server v1.3.0
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/golang/protobuf v1.5.4
+	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mr-tron/base58 v1.2.0
+	github.com/newrelic/go-agent/v3 v3.40.1
+	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/nrzap v1.2.4
 	github.com/ory/dockertest/v3 v3.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.27.1
+	golang.org/x/net v0.46.1-0.20251013234738-63d1a5100f82
 	google.golang.org/grpc v1.77.0
 	google.golang.org/protobuf v1.36.10
 )
@@ -36,7 +41,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -53,8 +57,6 @@ require (
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
-	github.com/newrelic/go-agent/v3 v3.40.1 // indirect
-	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/nrzap v1.2.4 // indirect
 	github.com/newrelic/go-agent/v3/integrations/nrpgx v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
@@ -76,7 +78,6 @@ require (
 	github.com/ybbus/jsonrpc v2.1.2+incompatible // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/net v0.46.1-0.20251013234738-63d1a5100f82 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect

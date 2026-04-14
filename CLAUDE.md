@@ -27,7 +27,7 @@ The indexer has two independently deployable services:
 
 1. **Geyser Worker** (`app/geyser/`) — Subscribes to Yellowstone Geyser plugin via gRPC streaming to receive real-time Code VM account updates. Processes memory account deltas and persists them to storage. Runs a backup worker to periodically re-sync and catch missed events.
 
-2. **RPC Service** (`app/rpc/`) — gRPC server (port 8086) exposing the `Indexer` service with two methods: `GetVirtualTimelockAccounts` and `GetVirtualDurableNonce`. Queries indexed virtual account state from the storage backend.
+2. **RPC Service** (`app/rpc/`) — single h2c HTTP server (port 8086, `LISTEN_ADDRESS`) exposing the `Indexer` service with two methods: `GetVirtualTimelockAccounts` and `GetVirtualDurableNonce`. A buf Connect handler natively serves gRPC, gRPC-Web, and Connect/Connect-JSON on the same port, reusing the ocp-server interceptor chain (headers → metrics → validation) via a unary-interceptor adapter. The standard `grpc.health.v1` service is mounted alongside for `grpc_health_probe`.
 
 Both services share a common data layer and are configured via environment variables.
 
@@ -50,8 +50,10 @@ Core processing logic is in `geyser/handler_memory.go`. The worker:
 
 - Proto definitions: `proto/indexer/` (service owns) and `proto/geyser/` (external)
 - Generated Go code: `generated/indexer/v1/` and `generated/geyser/v1/`
+- buf Connect bindings live in `generated/indexer/v1/indexerv1connect/` and were generated as a one-off (not yet wired into `make generate`)
 
 ### Key Dependencies
 
 - `github.com/code-payments/ocp-server` — Solana/CVM utilities, gRPC infrastructure, retry logic
+- `connectrpc.com/connect` — buf Connect runtime for the HTTP/Connect transport on the RPC service
 - Go 1.26

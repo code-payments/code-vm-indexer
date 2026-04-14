@@ -11,6 +11,7 @@ test:
 	@go test -cover ./...
 
 # todo: Currently broken with Geyser proto definitions due to optional fields
+# todo: Properly integrate buf's Connect. Generated code created by Claude as one-off
 .PHONY: generate
 generate:
 	@rm -rf generated/*
@@ -46,7 +47,7 @@ run-rpc: build-rpc build-rpc-image
 		--rm \
 		-e APP_NAME=code-vm-indexer-rpc-service \
 		-e DATA_STORAGE_TYPE=$(DATA_STORAGE_TYPE) \
-		-e INSECURE_LISTEN_ADDRESS=:8086 \
+		-e LISTEN_ADDRESS=:8086 \
 		-e LOG_LEVEL=trace \
 		-e POSTGRES_USER=$(POSTGRES_USER) \
 		-e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
