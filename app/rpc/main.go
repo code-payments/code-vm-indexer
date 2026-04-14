@@ -43,6 +43,9 @@ const (
 	listenAddressEnv     = "LISTEN_ADDRESS"
 	defaultListenAddress = ":8086"
 
+	corsAllowedOriginsEnv     = "CORS_ALLOWED_ORIGINS"
+	defaultCORSAllowedOrigins = "*"
+
 	shutdownGracePeriod = 30 * time.Second
 )
 
@@ -90,9 +93,14 @@ func main() {
 	health_grpc.RegisterHealthServer(healthSrv, health.NewServer())
 	mux.Handle("/grpc.health.v1.Health/", healthSrv)
 
+	allowedOrigins := os.Getenv(corsAllowedOriginsEnv)
+	if allowedOrigins == "" {
+		allowedOrigins = defaultCORSAllowedOrigins
+	}
+
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           h2c.NewHandler(mux, &http2.Server{}),
+		Handler:           h2c.NewHandler(withCORS(mux, allowedOrigins), &http2.Server{}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -177,6 +185,62 @@ func newMetricsProvider(appName, licenseKey, logLevel string) (metrics.Provider,
 		return nil, nil, err
 	}
 	return provider, nrCore, nil
+}
+
+// withCORS applies CORS headers required for browser-based Connect and
+// gRPC-Web clients. allowedOrigins is a comma-separated list; "*" allows any
+// origin. Preflight (OPTIONS) requests are answered directly.
+func withCORS(next http.Handler, allowedOrigins string) http.Handler {
+	origins := make(map[string]struct{})
+	wildcard := false
+	for _, o := range strings.Split(allowedOrigins, ",") {
+		o = strings.TrimSpace(o)
+		if o == "" {
+			continue
+		}
+		if o == "*" {
+			wildcard = true
+			continue
+		}
+		origins[o] = struct{}{}
+	}
+
+	allowHeaders := strings.Join([]string{
+		"Content-Type",
+		"Connect-Protocol-Version",
+		"Connect-Timeout-Ms",
+		"Grpc-Timeout",
+		"X-Grpc-Web",
+		"X-User-Agent",
+	}, ", ")
+	exposeHeaders := strings.Join([]string{
+		"Grpc-Status",
+		"Grpc-Message",
+		"Grpc-Status-Details-Bin",
+	}, ", ")
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			if wildcard {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			} else if _, ok := origins[origin]; ok {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Add("Vary", "Origin")
+			}
+			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", allowHeaders)
+			w.Header().Set("Access-Control-Expose-Headers", exposeHeaders)
+			w.Header().Set("Access-Control-Max-Age", "7200")
+		}
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 // connectAdapter bridges the existing gRPC indexerpb.IndexerServer into the
