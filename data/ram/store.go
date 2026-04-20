@@ -23,7 +23,11 @@ type Store interface {
 	// GetAllByMemoryAccount gets all database records for a given memory account
 	GetAllByMemoryAccount(ctx context.Context, memoryAccount string) ([]*Record, error)
 
-	// GetAllVirtualAccountsByAddressAndType gets all database records for
+	// GetAllVirtualAccountsByVmAndAddressAndType gets all database records for
 	// allocated memory with the provided address and account type in a VM
-	GetAllVirtualAccountsByAddressAndType(ctx context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*Record, error)
+	GetAllVirtualAccountsByVmAndAddressAndType(ctx context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*Record, error)
+
+	// GetAllVirtualAccountsByAddressAndType gets all database records for
+	// allocated memory with the provided address and account type across all VMs
+	GetAllVirtualAccountsByAddressAndType(ctx context.Context, address string, accountType vm.VirtualAccountType) ([]*Record, error)
 }

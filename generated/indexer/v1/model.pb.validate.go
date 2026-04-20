@@ -870,6 +870,23 @@ func (m *VirtualTimelockAccountWithStorageMetadata) Validate() error {
 
 	// no validation rules for Slot
 
+	if m.GetVmAccount() == nil {
+		return VirtualTimelockAccountWithStorageMetadataValidationError{
+			field:  "VmAccount",
+			reason: "value is required",
+		}
+	}
+
+	if v, ok := interface{}(m.GetVmAccount()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return VirtualTimelockAccountWithStorageMetadataValidationError{
+				field:  "VmAccount",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -973,6 +990,23 @@ func (m *VirtualDurableNonceWithStorageMetadata) Validate() error {
 	}
 
 	// no validation rules for Slot
+
+	if m.GetVmAccount() == nil {
+		return VirtualDurableNonceWithStorageMetadataValidationError{
+			field:  "VmAccount",
+			reason: "value is required",
+		}
+	}
+
+	if v, ok := interface{}(m.GetVmAccount()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return VirtualDurableNonceWithStorageMetadataValidationError{
+				field:  "VmAccount",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	return nil
 }

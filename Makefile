@@ -15,7 +15,7 @@ test:
 .PHONY: generate
 generate:
 	@rm -rf generated/*
-	@docker run --rm -v $(PWD)/proto:/proto -v $(PWD)/generated:/generated/go code-protobuf-api-builder-go
+	@docker run --rm -v $(PWD)/proto:/proto -v $(PWD)/generated:/generated/go ocp-protobuf-api-builder-go
 	@mv $(PWD)/generated/github.com/code-payments/code-vm-indexer/generated/go/* $(PWD)/generated
 	@rm -rf $(PWD)/generated/github.com
 

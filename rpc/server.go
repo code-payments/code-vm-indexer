@@ -39,7 +39,7 @@ func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.
 		zap.String("owner", base58.Encode(req.Owner.Value)),
 	)
 
-	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(
+	records, err := s.ramStore.GetAllVirtualAccountsByVmAndAddressAndType(
 		ctx,
 		base58.Encode(req.VmAccount.Value),
 		base58.Encode(req.Owner.Value),
@@ -60,6 +60,12 @@ func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.
 	}
 
 	for i, record := range records {
+		decodedVmAddress, err := base58.Decode(record.Vm)
+		if err != nil {
+			log.Warn("invalid vm address", zap.Error(err))
+			return nil, status.Error(codes.Internal, "")
+		}
+
 		decodedMemoryAccountAddress, err := base58.Decode(record.MemoryAccount)
 		if err != nil {
 			log.Warn("invalid memory account address", zap.Error(err))
@@ -90,7 +96,8 @@ func (s *server) GetVirtualTimelockAccounts(ctx context.Context, req *indexerpb.
 					},
 				},
 			},
-			Slot: record.Slot,
+			Slot:      record.Slot,
+			VmAccount: &indexerpb.Address{Value: decodedVmAddress},
 		}
 	}
 
@@ -105,7 +112,7 @@ func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetV
 		zap.String("address", base58.Encode(req.Address.Value)),
 	)
 
-	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(
+	records, err := s.ramStore.GetAllVirtualAccountsByVmAndAddressAndType(
 		ctx,
 		base58.Encode(req.VmAccount.Value),
 		base58.Encode(req.Address.Value),
@@ -125,6 +132,12 @@ func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetV
 		return nil, status.Error(codes.Internal, "")
 	}
 	record := records[0]
+
+	decodedVmAddress, err := base58.Decode(record.Vm)
+	if err != nil {
+		log.Warn("invalid vm address", zap.Error(err))
+		return nil, status.Error(codes.Internal, "")
+	}
 
 	decodedMemoryAccountAddress, err := base58.Decode(record.MemoryAccount)
 	if err != nil {
@@ -153,7 +166,79 @@ func (s *server) GetVirtualDurableNonce(ctx context.Context, req *indexerpb.GetV
 					},
 				},
 			},
-			Slot: record.Slot,
+			Slot:      record.Slot,
+			VmAccount: &indexerpb.Address{Value: decodedVmAddress},
 		},
 	}, nil
+}
+
+// SearchVirtualTimelockAccounts implements indexerpb.IndexerServer.SearchVirtualTimelockAccounts
+func (s *server) SearchVirtualTimelockAccounts(ctx context.Context, req *indexerpb.SearchVirtualTimelockAccountsRequest) (*indexerpb.SearchVirtualTimelockAccountsResponse, error) {
+	log := s.log.With(
+		zap.String("method", "SearchVirtualTimelockAccounts"),
+		zap.String("owner", base58.Encode(req.Owner.Value)),
+	)
+
+	records, err := s.ramStore.GetAllVirtualAccountsByAddressAndType(
+		ctx,
+		base58.Encode(req.Owner.Value),
+		vm.VirtualAccountTypeTimelock,
+	)
+	if err == ram.ErrItemNotFound {
+		return &indexerpb.SearchVirtualTimelockAccountsResponse{
+			Result: indexerpb.SearchVirtualTimelockAccountsResponse_NOT_FOUND,
+		}, nil
+	} else if err != nil {
+		log.Warn("failure querying db", zap.Error(err))
+		return nil, status.Error(codes.Internal, "")
+	}
+
+	okResp := &indexerpb.SearchVirtualTimelockAccountsResponse{
+		Result: indexerpb.SearchVirtualTimelockAccountsResponse_OK,
+		Items:  make([]*indexerpb.VirtualTimelockAccountWithStorageMetadata, len(records)),
+	}
+
+	for i, record := range records {
+		decodedVmAddress, err := base58.Decode(record.Vm)
+		if err != nil {
+			log.Warn("invalid vm address", zap.Error(err))
+			return nil, status.Error(codes.Internal, "")
+		}
+
+		decodedMemoryAccountAddress, err := base58.Decode(record.MemoryAccount)
+		if err != nil {
+			log.Warn("invalid memory account address", zap.Error(err))
+			return nil, status.Error(codes.Internal, "")
+		}
+
+		vta, ok := record.ToVirtualTimelockAccount()
+		if !ok {
+			log.Warn("invalid virtual timelock account data")
+			return nil, status.Error(codes.Internal, "")
+		}
+
+		okResp.Items[i] = &indexerpb.VirtualTimelockAccountWithStorageMetadata{
+			Account: &indexerpb.VirtualTimelockAccount{
+				Owner:        &indexerpb.Address{Value: vta.Owner},
+				Nonce:        &indexerpb.Hash{Value: vta.Nonce[:]},
+				TokenBump:    uint32(vta.TokenBump),
+				UnlockBump:   uint32(vta.UnlockBump),
+				WithdrawBump: uint32(vta.WithdrawBump),
+				Balance:      vta.Balance,
+				Bump:         uint32(vta.Bump),
+			},
+			Storage: &indexerpb.VirtualAccountStorage{
+				Storage: &indexerpb.VirtualAccountStorage_Memory{
+					Memory: &indexerpb.MemoryVirtualAccountStorage{
+						Account: &indexerpb.Address{Value: decodedMemoryAccountAddress},
+						Index:   uint32(record.Index),
+					},
+				},
+			},
+			Slot:      record.Slot,
+			VmAccount: &indexerpb.Address{Value: decodedVmAddress},
+		}
+	}
+
+	return okResp, nil
 }

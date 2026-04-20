@@ -59,9 +59,23 @@ func (s *store) GetAllByMemoryAccount(ctx context.Context, memoryAccount string)
 	return res, nil
 }
 
+// GetAllVirtualAccountsByVmAndAddressAndType implements ram.Store.GetAllVirtualAccountsByVmAndAddressAndType
+func (s *store) GetAllVirtualAccountsByVmAndAddressAndType(ctx context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*ram.Record, error) {
+	models, err := dbGetAllVirtualAccountsByVmAndAddressAndType(ctx, s.tableName, s.db, vm, address, accountType)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*ram.Record, len(models))
+	for i, model := range models {
+		res[i] = fromModel(model)
+	}
+	return res, nil
+}
+
 // GetAllVirtualAccountsByAddressAndType implements ram.Store.GetAllVirtualAccountsByAddressAndType
-func (s *store) GetAllVirtualAccountsByAddressAndType(ctx context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*ram.Record, error) {
-	models, err := dbGetAllVirtualAccountsByAddressAndType(ctx, s.tableName, s.db, vm, address, accountType)
+func (s *store) GetAllVirtualAccountsByAddressAndType(ctx context.Context, address string, accountType vm.VirtualAccountType) ([]*ram.Record, error) {
+	models, err := dbGetAllVirtualAccountsByAddressAndType(ctx, s.tableName, s.db, address, accountType)
 	if err != nil {
 		return nil, err
 	}

@@ -26,6 +26,8 @@ type IndexerClient interface {
 	GetVirtualTimelockAccounts(ctx context.Context, in *GetVirtualTimelockAccountsRequest, opts ...grpc.CallOption) (*GetVirtualTimelockAccountsResponse, error)
 	// GetVirtualDurableNonce gets a virtual durable nonce for a given address
 	GetVirtualDurableNonce(ctx context.Context, in *GetVirtualDurableNonceRequest, opts ...grpc.CallOption) (*GetVirtualDurableNonceResponse, error)
+	// SearchVirtualTimelockAccounts gets all virtual Timelock accounts across every VM the indexer is aware of
+	SearchVirtualTimelockAccounts(ctx context.Context, in *SearchVirtualTimelockAccountsRequest, opts ...grpc.CallOption) (*SearchVirtualTimelockAccountsResponse, error)
 }
 
 type indexerClient struct {
@@ -54,6 +56,15 @@ func (c *indexerClient) GetVirtualDurableNonce(ctx context.Context, in *GetVirtu
 	return out, nil
 }
 
+func (c *indexerClient) SearchVirtualTimelockAccounts(ctx context.Context, in *SearchVirtualTimelockAccountsRequest, opts ...grpc.CallOption) (*SearchVirtualTimelockAccountsResponse, error) {
+	out := new(SearchVirtualTimelockAccountsResponse)
+	err := c.cc.Invoke(ctx, "/code.vm.v1.Indexer/SearchVirtualTimelockAccounts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IndexerServer is the server API for Indexer service.
 // All implementations must embed UnimplementedIndexerServer
 // for forward compatibility
@@ -62,6 +73,8 @@ type IndexerServer interface {
 	GetVirtualTimelockAccounts(context.Context, *GetVirtualTimelockAccountsRequest) (*GetVirtualTimelockAccountsResponse, error)
 	// GetVirtualDurableNonce gets a virtual durable nonce for a given address
 	GetVirtualDurableNonce(context.Context, *GetVirtualDurableNonceRequest) (*GetVirtualDurableNonceResponse, error)
+	// SearchVirtualTimelockAccounts gets all virtual Timelock accounts across every VM the indexer is aware of
+	SearchVirtualTimelockAccounts(context.Context, *SearchVirtualTimelockAccountsRequest) (*SearchVirtualTimelockAccountsResponse, error)
 	mustEmbedUnimplementedIndexerServer()
 }
 
@@ -74,6 +87,9 @@ func (UnimplementedIndexerServer) GetVirtualTimelockAccounts(context.Context, *G
 }
 func (UnimplementedIndexerServer) GetVirtualDurableNonce(context.Context, *GetVirtualDurableNonceRequest) (*GetVirtualDurableNonceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVirtualDurableNonce not implemented")
+}
+func (UnimplementedIndexerServer) SearchVirtualTimelockAccounts(context.Context, *SearchVirtualTimelockAccountsRequest) (*SearchVirtualTimelockAccountsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchVirtualTimelockAccounts not implemented")
 }
 func (UnimplementedIndexerServer) mustEmbedUnimplementedIndexerServer() {}
 
@@ -124,6 +140,24 @@ func _Indexer_GetVirtualDurableNonce_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Indexer_SearchVirtualTimelockAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchVirtualTimelockAccountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexerServer).SearchVirtualTimelockAccounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/code.vm.v1.Indexer/SearchVirtualTimelockAccounts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexerServer).SearchVirtualTimelockAccounts(ctx, req.(*SearchVirtualTimelockAccountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Indexer_ServiceDesc is the grpc.ServiceDesc for Indexer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -138,6 +172,10 @@ var Indexer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVirtualDurableNonce",
 			Handler:    _Indexer_GetVirtualDurableNonce_Handler,
+		},
+		{
+			MethodName: "SearchVirtualTimelockAccounts",
+			Handler:    _Indexer_SearchVirtualTimelockAccounts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

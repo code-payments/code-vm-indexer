@@ -13,6 +13,9 @@ service Indexer {
 
     // GetVirtualDurableNonce gets a virtual durable nonce for a given address
     rpc GetVirtualDurableNonce(GetVirtualDurableNonceRequest) returns (GetVirtualDurableNonceResponse);
+
+    // SearchVirtualTimelockAccounts gets all virtual Timelock accounts across every VM the indexer is aware of
+    rpc SearchVirtualTimelockAccounts(SearchVirtualTimelockAccountsRequest) returns (SearchVirtualTimelockAccountsResponse);
 }
 
 message GetVirtualTimelockAccountsRequest {
@@ -45,4 +48,18 @@ message GetVirtualDurableNonceResponse {
     }
 
     VirtualDurableNonceWithStorageMetadata item = 2;
+}
+
+message SearchVirtualTimelockAccountsRequest {
+    Address owner = 1 [(validate.rules).message.required = true];
+}
+
+message SearchVirtualTimelockAccountsResponse {
+    Result result = 1;
+    enum Result {
+        OK = 0;
+        NOT_FOUND = 1;
+    }
+
+    repeated VirtualTimelockAccountWithStorageMetadata items = 2;
 }

@@ -84,6 +84,8 @@ message VirtualTimelockAccountWithStorageMetadata {
     VirtualAccountStorage storage = 2 [(validate.rules).message.required = true];
 
     uint64 slot = 3;
+
+    Address vm_account = 4 [(validate.rules).message.required = true];
 }
 
 message VirtualDurableNonceWithStorageMetadata {
@@ -92,4 +94,6 @@ message VirtualDurableNonceWithStorageMetadata {
     VirtualAccountStorage storage = 2 [(validate.rules).message.required = true];
 
     uint64 slot = 3;
+
+    Address vm_account = 4 [(validate.rules).message.required = true];
 }

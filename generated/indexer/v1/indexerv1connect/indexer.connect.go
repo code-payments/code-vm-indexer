@@ -38,6 +38,9 @@ const (
 	// IndexerGetVirtualDurableNonceProcedure is the fully-qualified name of the Indexer's
 	// GetVirtualDurableNonce RPC.
 	IndexerGetVirtualDurableNonceProcedure = "/code.vm.v1.Indexer/GetVirtualDurableNonce"
+	// IndexerSearchVirtualTimelockAccountsProcedure is the fully-qualified name of the Indexer's
+	// SearchVirtualTimelockAccounts RPC.
+	IndexerSearchVirtualTimelockAccountsProcedure = "/code.vm.v1.Indexer/SearchVirtualTimelockAccounts"
 )
 
 // IndexerClient is a client for the code.vm.v1.Indexer service.
@@ -46,6 +49,8 @@ type IndexerClient interface {
 	GetVirtualTimelockAccounts(context.Context, *connect.Request[v1.GetVirtualTimelockAccountsRequest]) (*connect.Response[v1.GetVirtualTimelockAccountsResponse], error)
 	// GetVirtualDurableNonce gets a virtual durable nonce for a given address
 	GetVirtualDurableNonce(context.Context, *connect.Request[v1.GetVirtualDurableNonceRequest]) (*connect.Response[v1.GetVirtualDurableNonceResponse], error)
+	// SearchVirtualTimelockAccounts gets all virtual Timelock accounts across every VM the indexer is aware of
+	SearchVirtualTimelockAccounts(context.Context, *connect.Request[v1.SearchVirtualTimelockAccountsRequest]) (*connect.Response[v1.SearchVirtualTimelockAccountsResponse], error)
 }
 
 // NewIndexerClient constructs a client for the code.vm.v1.Indexer service. By default, it uses the
@@ -68,13 +73,19 @@ func NewIndexerClient(httpClient connect.HTTPClient, baseURL string, opts ...con
 			baseURL+IndexerGetVirtualDurableNonceProcedure,
 			opts...,
 		),
+		searchVirtualTimelockAccounts: connect.NewClient[v1.SearchVirtualTimelockAccountsRequest, v1.SearchVirtualTimelockAccountsResponse](
+			httpClient,
+			baseURL+IndexerSearchVirtualTimelockAccountsProcedure,
+			opts...,
+		),
 	}
 }
 
 // indexerClient implements IndexerClient.
 type indexerClient struct {
-	getVirtualTimelockAccounts *connect.Client[v1.GetVirtualTimelockAccountsRequest, v1.GetVirtualTimelockAccountsResponse]
-	getVirtualDurableNonce     *connect.Client[v1.GetVirtualDurableNonceRequest, v1.GetVirtualDurableNonceResponse]
+	getVirtualTimelockAccounts    *connect.Client[v1.GetVirtualTimelockAccountsRequest, v1.GetVirtualTimelockAccountsResponse]
+	getVirtualDurableNonce        *connect.Client[v1.GetVirtualDurableNonceRequest, v1.GetVirtualDurableNonceResponse]
+	searchVirtualTimelockAccounts *connect.Client[v1.SearchVirtualTimelockAccountsRequest, v1.SearchVirtualTimelockAccountsResponse]
 }
 
 // GetVirtualTimelockAccounts calls code.vm.v1.Indexer.GetVirtualTimelockAccounts.
@@ -87,12 +98,19 @@ func (c *indexerClient) GetVirtualDurableNonce(ctx context.Context, req *connect
 	return c.getVirtualDurableNonce.CallUnary(ctx, req)
 }
 
+// SearchVirtualTimelockAccounts calls code.vm.v1.Indexer.SearchVirtualTimelockAccounts.
+func (c *indexerClient) SearchVirtualTimelockAccounts(ctx context.Context, req *connect.Request[v1.SearchVirtualTimelockAccountsRequest]) (*connect.Response[v1.SearchVirtualTimelockAccountsResponse], error) {
+	return c.searchVirtualTimelockAccounts.CallUnary(ctx, req)
+}
+
 // IndexerHandler is an implementation of the code.vm.v1.Indexer service.
 type IndexerHandler interface {
 	// GetVirtualTimelockAccounts gets all virtual Timelock accounts for a given owner address
 	GetVirtualTimelockAccounts(context.Context, *connect.Request[v1.GetVirtualTimelockAccountsRequest]) (*connect.Response[v1.GetVirtualTimelockAccountsResponse], error)
 	// GetVirtualDurableNonce gets a virtual durable nonce for a given address
 	GetVirtualDurableNonce(context.Context, *connect.Request[v1.GetVirtualDurableNonceRequest]) (*connect.Response[v1.GetVirtualDurableNonceResponse], error)
+	// SearchVirtualTimelockAccounts gets all virtual Timelock accounts across every VM the indexer is aware of
+	SearchVirtualTimelockAccounts(context.Context, *connect.Request[v1.SearchVirtualTimelockAccountsRequest]) (*connect.Response[v1.SearchVirtualTimelockAccountsResponse], error)
 }
 
 // NewIndexerHandler builds an HTTP handler from the service implementation. It returns the path on
@@ -111,12 +129,19 @@ func NewIndexerHandler(svc IndexerHandler, opts ...connect.HandlerOption) (strin
 		svc.GetVirtualDurableNonce,
 		opts...,
 	)
+	indexerSearchVirtualTimelockAccountsHandler := connect.NewUnaryHandler(
+		IndexerSearchVirtualTimelockAccountsProcedure,
+		svc.SearchVirtualTimelockAccounts,
+		opts...,
+	)
 	return "/code.vm.v1.Indexer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case IndexerGetVirtualTimelockAccountsProcedure:
 			indexerGetVirtualTimelockAccountsHandler.ServeHTTP(w, r)
 		case IndexerGetVirtualDurableNonceProcedure:
 			indexerGetVirtualDurableNonceHandler.ServeHTTP(w, r)
+		case IndexerSearchVirtualTimelockAccountsProcedure:
+			indexerSearchVirtualTimelockAccountsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -132,4 +157,8 @@ func (UnimplementedIndexerHandler) GetVirtualTimelockAccounts(context.Context, *
 
 func (UnimplementedIndexerHandler) GetVirtualDurableNonce(context.Context, *connect.Request[v1.GetVirtualDurableNonceRequest]) (*connect.Response[v1.GetVirtualDurableNonceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("code.vm.v1.Indexer.GetVirtualDurableNonce is not implemented"))
+}
+
+func (UnimplementedIndexerHandler) SearchVirtualTimelockAccounts(context.Context, *connect.Request[v1.SearchVirtualTimelockAccountsRequest]) (*connect.Response[v1.SearchVirtualTimelockAccountsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("code.vm.v1.Indexer.SearchVirtualTimelockAccounts is not implemented"))
 }

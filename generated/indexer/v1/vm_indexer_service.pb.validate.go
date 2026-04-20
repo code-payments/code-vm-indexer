@@ -401,3 +401,173 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetVirtualDurableNonceResponseValidationError{}
+
+// Validate checks the field values on SearchVirtualTimelockAccountsRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, an error is returned.
+func (m *SearchVirtualTimelockAccountsRequest) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	if m.GetOwner() == nil {
+		return SearchVirtualTimelockAccountsRequestValidationError{
+			field:  "Owner",
+			reason: "value is required",
+		}
+	}
+
+	if v, ok := interface{}(m.GetOwner()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return SearchVirtualTimelockAccountsRequestValidationError{
+				field:  "Owner",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	return nil
+}
+
+// SearchVirtualTimelockAccountsRequestValidationError is the validation error
+// returned by SearchVirtualTimelockAccountsRequest.Validate if the designated
+// constraints aren't met.
+type SearchVirtualTimelockAccountsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SearchVirtualTimelockAccountsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SearchVirtualTimelockAccountsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SearchVirtualTimelockAccountsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SearchVirtualTimelockAccountsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SearchVirtualTimelockAccountsRequestValidationError) ErrorName() string {
+	return "SearchVirtualTimelockAccountsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SearchVirtualTimelockAccountsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSearchVirtualTimelockAccountsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SearchVirtualTimelockAccountsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SearchVirtualTimelockAccountsRequestValidationError{}
+
+// Validate checks the field values on SearchVirtualTimelockAccountsResponse
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, an error is returned.
+func (m *SearchVirtualTimelockAccountsResponse) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	// no validation rules for Result
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return SearchVirtualTimelockAccountsResponseValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// SearchVirtualTimelockAccountsResponseValidationError is the validation error
+// returned by SearchVirtualTimelockAccountsResponse.Validate if the
+// designated constraints aren't met.
+type SearchVirtualTimelockAccountsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SearchVirtualTimelockAccountsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SearchVirtualTimelockAccountsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SearchVirtualTimelockAccountsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SearchVirtualTimelockAccountsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SearchVirtualTimelockAccountsResponseValidationError) ErrorName() string {
+	return "SearchVirtualTimelockAccountsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SearchVirtualTimelockAccountsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSearchVirtualTimelockAccountsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SearchVirtualTimelockAccountsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SearchVirtualTimelockAccountsResponseValidationError{}

@@ -91,12 +91,24 @@ func (s *store) GetAllByMemoryAccount(_ context.Context, memoryAccount string) (
 	return cloneRecords(items), nil
 }
 
-// GetAllVirtualAccountsByAddressAndType implements ram.Store.GetAllVirtualAccountsByAddressAndType
-func (s *store) GetAllVirtualAccountsByAddressAndType(_ context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*ram.Record, error) {
+// GetAllVirtualAccountsByVmAndAddressAndType implements ram.Store.GetAllVirtualAccountsByVmAndAddressAndType
+func (s *store) GetAllVirtualAccountsByVmAndAddressAndType(_ context.Context, vm, address string, accountType vm.VirtualAccountType) ([]*ram.Record, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	items := s.findByVmAddressAndAccountType(vm, address, accountType)
+	if len(items) == 0 {
+		return nil, ram.ErrItemNotFound
+	}
+	return cloneRecords(items), nil
+}
+
+// GetAllVirtualAccountsByAddressAndType implements ram.Store.GetAllVirtualAccountsByAddressAndType
+func (s *store) GetAllVirtualAccountsByAddressAndType(_ context.Context, address string, accountType vm.VirtualAccountType) ([]*ram.Record, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	items := s.findByAddressAndAccountType(address, accountType)
 	if len(items) == 0 {
 		return nil, ram.ErrItemNotFound
 	}
@@ -134,6 +146,20 @@ func (s *store) findByVmAddressAndAccountType(vm, address string, accountType vm
 		}
 
 		if item.Vm == vm && *item.Address == address && *item.Type == accountType {
+			res = append(res, item)
+		}
+	}
+	return res
+}
+
+func (s *store) findByAddressAndAccountType(address string, accountType vm.VirtualAccountType) []*ram.Record {
+	var res []*ram.Record
+	for _, item := range s.records {
+		if !item.IsAllocated {
+			continue
+		}
+
+		if *item.Address == address && *item.Type == accountType {
 			res = append(res, item)
 		}
 	}

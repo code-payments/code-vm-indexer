@@ -33,7 +33,7 @@ Both services share a common data layer and are configured via environment varia
 
 ### Data Layer
 
-- **Store interface** (`data/ram/store.go`) — defines `Save`, `GetAllMemoryAccounts`, `GetAllByMemoryAccount`, `GetAllVirtualAccountsByAddressAndType`
+- **Store interface** (`data/ram/store.go`) — defines `Save`, `GetAllMemoryAccounts`, `GetAllByMemoryAccount`, `GetAllVirtualAccountsByVmAndAddressAndType`, `GetAllVirtualAccountsByAddressAndType`
 - **Implementations**: in-memory (`data/ram/memory/`) and PostgreSQL (`data/ram/postgres/`)
 - **Shared test suite** (`data/ram/tests/tests.go`) — `RunTests()` runs the same tests against any Store implementation
 - Only memory storage is currently supported for production use

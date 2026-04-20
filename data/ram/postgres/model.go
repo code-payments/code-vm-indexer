@@ -175,7 +175,7 @@ func dbGetAllByMemoryAccount(ctx context.Context, tableName string, db *sqlx.DB,
 	return res, nil
 }
 
-func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName string, db *sqlx.DB, vm, address string, accountType vm.VirtualAccountType) ([]*model, error) {
+func dbGetAllVirtualAccountsByVmAndAddressAndType(ctx context.Context, tableName string, db *sqlx.DB, vm, address string, accountType vm.VirtualAccountType) ([]*model, error) {
 	res := []*model{}
 
 	query := `SELECT id, vm, memory_account, index, is_allocated, address, item_type, data, slot, is_slot_advanced, last_updated_at FROM ` + tableName + `
@@ -186,6 +186,27 @@ func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName stri
 		&res,
 		query,
 		vm,
+		address,
+		accountType,
+	)
+	if err != nil {
+		return nil, pgutil.CheckNoRows(err, ram.ErrItemNotFound)
+	} else if len(res) == 0 {
+		return nil, ram.ErrItemNotFound
+	}
+	return res, nil
+}
+
+func dbGetAllVirtualAccountsByAddressAndType(ctx context.Context, tableName string, db *sqlx.DB, address string, accountType vm.VirtualAccountType) ([]*model, error) {
+	res := []*model{}
+
+	query := `SELECT id, vm, memory_account, index, is_allocated, address, item_type, data, slot, is_slot_advanced, last_updated_at FROM ` + tableName + `
+		WHERE address = $1 AND item_type = $2`
+
+	err := db.SelectContext(
+		ctx,
+		&res,
+		query,
 		address,
 		accountType,
 	)

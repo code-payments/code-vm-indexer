@@ -266,6 +266,14 @@ func (a *connectAdapter) GetVirtualDurableNonce(ctx context.Context, req *connec
 	return connect.NewResponse(resp), nil
 }
 
+func (a *connectAdapter) SearchVirtualTimelockAccounts(ctx context.Context, req *connect.Request[indexerpb.SearchVirtualTimelockAccountsRequest]) (*connect.Response[indexerpb.SearchVirtualTimelockAccountsResponse], error) {
+	resp, err := a.grpcServer.SearchVirtualTimelockAccounts(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
 // grpcCompatInterceptor wraps the ocp-server gRPC unary interceptor chain
 // (headers -> metrics -> validation) so the Connect transport runs the same
 // middleware as the gRPC server. Stream RPCs are not used by this service,

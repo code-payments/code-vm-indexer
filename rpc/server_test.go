@@ -10,9 +10,9 @@ import (
 	"github.com/code-payments/ocp-server/solana/vm"
 	"github.com/code-payments/ocp-server/testutil"
 	"github.com/mr-tron/base58"
-	"go.uber.org/zap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	indexerpb "github.com/code-payments/code-vm-indexer/generated/indexer/v1"
@@ -54,6 +54,7 @@ func TestGetVirtualDurableNonce_HappyPath_Memory(t *testing.T) {
 	assert.Equal(t, ramRecord.MemoryAccount, base58.Encode(memoryStorage.Account.Value))
 	assert.EqualValues(t, ramRecord.Index, memoryStorage.Index)
 
+	assert.Equal(t, ramRecord.Vm, base58.Encode(resp.Item.VmAccount.Value))
 	assert.Equal(t, ramRecord.Slot, resp.Item.Slot)
 }
 
@@ -108,8 +109,73 @@ func TestGetVirtualTimelockAccounts_HappyPath_Memory(t *testing.T) {
 		assert.Equal(t, ramRecord.MemoryAccount, base58.Encode(memoryStorage.Account.Value))
 		assert.EqualValues(t, ramRecord.Index, memoryStorage.Index)
 
+		assert.Equal(t, ramRecord.Vm, base58.Encode(protoItem.VmAccount.Value))
 		assert.Equal(t, ramRecord.Slot, protoItem.Slot)
 	}
+}
+
+func TestSearchVirtualTimelockAccounts_HappyPath_Memory(t *testing.T) {
+	env, cleanup := setup(t)
+	defer cleanup()
+
+	ownerAccount := testutil.NewRandomAccount(t)
+
+	resp, err := env.client.SearchVirtualTimelockAccounts(env.ctx, &indexerpb.SearchVirtualTimelockAccountsRequest{
+		Owner: &indexerpb.Address{Value: ownerAccount.PublicKey().ToBytes()},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, indexerpb.SearchVirtualTimelockAccountsResponse_NOT_FOUND, resp.Result)
+
+	var vmAccounts []*common.Account
+	var vtas []*vm.VirtualTimelockAccount
+	var ramRecords []*ram.Record
+	for i := 0; i < 3; i++ {
+		vmAccount := testutil.NewRandomAccount(t)
+		vmAccounts = append(vmAccounts, vmAccount)
+
+		vta := generateVirtualTimelockAccount(ownerAccount.PublicKey().ToBytes())
+		vtas = append(vtas, vta)
+
+		ramRecord := env.saveVirtualAccountToRamDb(t, vmAccount, vm.VirtualAccountTypeTimelock, base58.Encode(vta.Owner), vta.Marshal())
+		ramRecords = append(ramRecords, ramRecord)
+	}
+
+	resp, err = env.client.SearchVirtualTimelockAccounts(env.ctx, &indexerpb.SearchVirtualTimelockAccountsRequest{
+		Owner: &indexerpb.Address{Value: ownerAccount.PublicKey().ToBytes()},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, indexerpb.SearchVirtualTimelockAccountsResponse_OK, resp.Result)
+	require.Len(t, resp.Items, len(vtas))
+
+	for i := 0; i < len(vtas); i++ {
+		vta := vtas[i]
+		protoItem := resp.Items[i]
+		protoVta := resp.Items[i].Account
+		ramRecord := ramRecords[i]
+
+		assert.EqualValues(t, vta.Owner, protoVta.Owner.Value)
+		assert.EqualValues(t, vta.Nonce[:], protoVta.Nonce.Value)
+		assert.EqualValues(t, vta.TokenBump, protoVta.TokenBump)
+		assert.EqualValues(t, vta.UnlockBump, protoVta.UnlockBump)
+		assert.EqualValues(t, vta.WithdrawBump, protoVta.WithdrawBump)
+		assert.Equal(t, vta.Balance, protoVta.Balance)
+		assert.EqualValues(t, vta.Bump, protoVta.Bump)
+
+		memoryStorage := protoItem.Storage.GetMemory()
+		require.NotNil(t, memoryStorage)
+		assert.Equal(t, ramRecord.MemoryAccount, base58.Encode(memoryStorage.Account.Value))
+		assert.EqualValues(t, ramRecord.Index, memoryStorage.Index)
+
+		assert.Equal(t, ramRecord.Vm, base58.Encode(protoItem.VmAccount.Value))
+		assert.Equal(t, ramRecord.Slot, protoItem.Slot)
+	}
+
+	otherOwner := testutil.NewRandomAccount(t)
+	resp, err = env.client.SearchVirtualTimelockAccounts(env.ctx, &indexerpb.SearchVirtualTimelockAccountsRequest{
+		Owner: &indexerpb.Address{Value: otherOwner.PublicKey().ToBytes()},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, indexerpb.SearchVirtualTimelockAccountsResponse_NOT_FOUND, resp.Result)
 }
 
 type testEnv struct {
@@ -195,4 +261,3 @@ func generateVirtualTimelockAccount(owner ed25519.PublicKey) *vm.VirtualTimelock
 		Bump:    252,
 	}
 }
-

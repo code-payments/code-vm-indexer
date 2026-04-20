@@ -18,6 +18,7 @@ func RunTests(t *testing.T, s ram.Store, teardown func()) {
 		testRoundTrip,
 		testGetAllMemoryAccounts,
 		testGetAllByMemoryAccount,
+		testGetAllVirtualAccountsByVmAndAddressAndType,
 		testGetAllVirtualAccountsByAddressAndType,
 	} {
 		tf(t, s)
@@ -34,7 +35,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		address := "address"
 		accountType := vm.VirtualAccountTypeTimelock
 
-		_, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
+		_, err := s.GetAllVirtualAccountsByVmAndAddressAndType(ctx, vmAddr, address, accountType)
 		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		_, err = s.GetAllByMemoryAccount(ctx, memoryAccount)
@@ -63,7 +64,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		assert.EqualValues(t, 1, expected.Id)
 		assert.True(t, expected.LastUpdatedAt.After(start))
 
-		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
+		actual, err := s.GetAllVirtualAccountsByVmAndAddressAndType(ctx, vmAddr, address, accountType)
 		require.NoError(t, err)
 		require.Len(t, actual, 1)
 		assertEquivalentRecords(t, &cloned, actual[0])
@@ -80,7 +81,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		expected.IsSlotAdvanced = false
 		assert.Equal(t, ram.ErrStaleState, s.Save(ctx, expected))
 
-		actual, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
+		actual, err = s.GetAllVirtualAccountsByVmAndAddressAndType(ctx, vmAddr, address, accountType)
 		require.NoError(t, err)
 		require.Len(t, actual, 1)
 		assertEquivalentRecords(t, &cloned, actual[0])
@@ -94,7 +95,7 @@ func testRoundTrip(t *testing.T, s ram.Store) {
 		cloned = expected.Clone()
 		require.NoError(t, s.Save(ctx, expected))
 
-		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, address, accountType)
+		_, err = s.GetAllVirtualAccountsByVmAndAddressAndType(ctx, vmAddr, address, accountType)
 		assert.Equal(t, ram.ErrItemNotFound, err)
 
 		actual, err = s.GetAllByMemoryAccount(ctx, memoryAccount)
@@ -170,8 +171,8 @@ func testGetAllByMemoryAccount(t *testing.T, s ram.Store) {
 	})
 }
 
-func testGetAllVirtualAccountsByAddressAndType(t *testing.T, s ram.Store) {
-	t.Run("testGetAllVirtualAccountsByAddressAndType", func(t *testing.T) {
+func testGetAllVirtualAccountsByVmAndAddressAndType(t *testing.T, s ram.Store) {
+	t.Run("testGetAllVirtualAccountsByVmAndAddressAndType", func(t *testing.T) {
 		ctx := context.Background()
 
 		vmAddr := "vm"
@@ -205,14 +206,63 @@ func testGetAllVirtualAccountsByAddressAndType(t *testing.T, s ram.Store) {
 			}
 		}
 
-		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr, addressToQuery, vm.VirtualAccountTypeDurableNonce)
+		actual, err := s.GetAllVirtualAccountsByVmAndAddressAndType(ctx, vmAddr, addressToQuery, vm.VirtualAccountTypeDurableNonce)
 		require.NoError(t, err)
 		require.Len(t, actual, len(expected))
 		for i, record := range actual {
 			assertEquivalentRecords(t, record, expected[i])
 		}
 
-		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, vmAddr+"-other", addressToQuery, vm.VirtualAccountTypeDurableNonce)
+		_, err = s.GetAllVirtualAccountsByVmAndAddressAndType(ctx, vmAddr+"-other", addressToQuery, vm.VirtualAccountTypeDurableNonce)
+		assert.Equal(t, ram.ErrItemNotFound, err)
+	})
+}
+
+func testGetAllVirtualAccountsByAddressAndType(t *testing.T, s ram.Store) {
+	t.Run("testGetAllVirtualAccountsByAddressAndType", func(t *testing.T) {
+		ctx := context.Background()
+
+		addressToQuery := "owner1"
+
+		var expected []*ram.Record
+		for i := 0; i < 3; i++ {
+			for j := 0; j < 2; j++ {
+				address := fmt.Sprintf("owner%d", j)
+				accountType := vm.VirtualAccountTypeTimelock
+				record := &ram.Record{
+					Vm: fmt.Sprintf("vm%d", i),
+
+					MemoryAccount: fmt.Sprintf("memory_account_%d", i),
+					Index:         uint16(2*i + j),
+					IsAllocated:   true,
+
+					Address: &address,
+					Type:    &accountType,
+					Data:    []byte(fmt.Sprintf("data%d_%d", i, j)),
+
+					Slot: 1,
+				}
+
+				if address == addressToQuery {
+					cloned := record.Clone()
+					expected = append(expected, &cloned)
+				}
+
+				require.NoError(t, s.Save(ctx, record))
+			}
+		}
+
+		actual, err := s.GetAllVirtualAccountsByAddressAndType(ctx, addressToQuery, vm.VirtualAccountTypeTimelock)
+		require.NoError(t, err)
+		require.Len(t, actual, len(expected))
+		for i, record := range actual {
+			assertEquivalentRecords(t, record, expected[i])
+		}
+
+		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, "nonexistent", vm.VirtualAccountTypeTimelock)
+		assert.Equal(t, ram.ErrItemNotFound, err)
+
+		_, err = s.GetAllVirtualAccountsByAddressAndType(ctx, addressToQuery, vm.VirtualAccountTypeDurableNonce)
 		assert.Equal(t, ram.ErrItemNotFound, err)
 	})
 }
