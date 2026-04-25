@@ -130,7 +130,12 @@ func (h *MemoryAccountWithDataUpdateHandler) backupWorker(ctx context.Context) e
 
 					data, observedAtSlot, err := h.solanaClient.GetAccountDataAfterBlock(decodedAddress, minSlot)
 					if err != nil {
-						log.Warn("failure getting account data", zap.Error(err))
+						switch err {
+						case solana.ErrStaleData:
+							log.With(zap.Error(err)).Debug("failure getting account data")
+						default:
+							log.With(zap.Error(err)).Warn("failure getting account data")
+						}
 						return
 					}
 
