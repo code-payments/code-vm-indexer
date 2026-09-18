@@ -2,13 +2,14 @@ package geyser
 
 import (
 	"context"
+	"crypto/tls"
 	"time"
 
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 
 	geyserpb "github.com/code-payments/code-vm-indexer/generated/geyser/v1"
@@ -25,7 +26,7 @@ var (
 )
 
 func newGeyserClient(endpoint, xToken string) (geyserpb.GeyserClient, error) {
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{}))}
 	if len(xToken) > 0 {
 		opts = append(
 			opts,
