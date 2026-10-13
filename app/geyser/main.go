@@ -61,6 +61,10 @@ func (a *app) Init(logger *zap.Logger, _ metrics.Provider, _ grpcapp.Config) err
 func (a *app) RegisterWithGRPC(server *grpc.Server) {
 }
 
+// Drain implements grpc_app.App.Drain.
+func (a *app) Drain(ctx context.Context) {
+}
+
 // ShutdownChan implements grpcapp.App.ShutdownChan
 func (a *app) ShutdownChan() <-chan struct{} {
 	return a.shutdownCh
